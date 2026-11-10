@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EstudaFlow — Gestão Acadêmica</title>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- ÍCONES (sprite SVG minimalista). Uso: <svg class="icon"><use href="#i-nome"/></svg> -->
+<svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></symbol>
+  <symbol id="i-target" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></symbol>
+  <symbol id="i-folder" viewBox="0 0 24 24"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></symbol>
+  <symbol id="i-book" viewBox="0 0 24 24"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></symbol>
+  <symbol id="i-file" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></symbol>
+  <symbol id="i-network" viewBox="0 0 24 24"><rect x="16" y="16" width="6" height="6" rx="1"/><rect x="2" y="16" width="6" height="6" rx="1"/><rect x="9" y="2" width="6" height="6" rx="1"/><path d="M5 16v-3a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1v3"/><path d="M12 12V8"/></symbol>
+  <symbol id="i-table" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></symbol>
+  <symbol id="i-text" viewBox="0 0 24 24"><path d="M17 10H3M21 6H3M21 14H3M17 18H3"/></symbol>
+  <symbol id="i-presentation" viewBox="0 0 24 24"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></symbol>
+  <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+</svg>
+
+<!-- AUTH SCREEN -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">✦ EstudaFlow</div>
+    <div class="auth-tagline">Seu ecossistema de aprendizado acadêmico</div>
+    <div class="auth-tabs">
+      <div class="auth-tab active" onclick="switchAuthTab('login')">Entrar</div>
+      <div class="auth-tab" onclick="switchAuthTab('register')">Cadastrar</div>
+    </div>
+    <div id="login-form">
+      <div class="form-group"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com" /></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••" /></div>
+      <button class="btn-primary" onclick="doLogin()">Entrar na plataforma</button>
+    </div>
+    <div id="register-form" style="display:none">
+      <div class="form-group"><label>Nome completo</label><input type="text" id="reg-name" placeholder="Seu nome" /></div>
+      <div class="form-group"><label>E-mail</label><input type="email" id="reg-email" placeholder="seu@email.com" /></div>
+      <div class="form-group"><label>Curso</label><input type="text" id="reg-curso" placeholder="Ex: Ciência da Computação" /></div>
+      <div class="form-group"><label>Senha</label><input type="password" id="reg-pass" placeholder="Min. 6 caracteres" /></div>
+      <button class="btn-primary" onclick="doRegister()">Criar conta gratuita</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="app">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <span>✦ EstudaFlow</span>
+      <small>Plataforma Acadêmica</small>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-item active" onclick="goPage('dashboard')"><span class="nav-icon"><svg class="icon"><use href="#i-grid"/></svg></span> Dashboard</div>
+      <div class="nav-item" onclick="goPage('ferramentas')"><span class="nav-icon"><svg class="icon"><use href="#i-pencil"/></svg></span> Criar Conteúdo</div>
+      <div class="nav-item" onclick="goPage('metas')"><span class="nav-icon"><svg class="icon"><use href="#i-target"/></svg></span> Metas</div>
+      <div class="nav-item" onclick="goPage('cronograma')"><span class="nav-icon"><svg class="icon"><use href="#i-calendar"/></svg></span> Cronograma</div>
+      <div class="nav-item" onclick="goPage('arquivos')"><span class="nav-icon"><svg class="icon"><use href="#i-folder"/></svg></span> Arquivos</div>
+      <div class="nav-item" onclick="goPage('biblioteca')"><span class="nav-icon"><svg class="icon"><use href="#i-book"/></svg></span> Biblioteca</div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-chip" onclick="doLogout()">
+        <div class="avatar" id="sidebar-avatar">A</div>
+        <div>
+          <div class="user-name" id="sidebar-name">Estudante</div>
+          <div class="user-role">Sair da conta</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Olá, <span id="dash-name">Estudante</span></div>
+        <div class="page-sub">Aqui está um resumo do seu progresso hoje</div>
+      </div>
+      <div class="grid-4" style="margin-bottom:20px">
+        <div class="stat-card blue"><div class="stat-icon"><svg class="icon"><use href="#i-file"/></svg></div><div class="stat-value" id="dash-docs">0</div><div class="stat-label">Documentos criados</div></div>
+        <div class="stat-card purple"><div class="stat-icon"><svg class="icon"><use href="#i-target"/></svg></div><div class="stat-value" id="dash-metas">0/0</div><div class="stat-label">Metas concluídas</div></div>
+        <div class="stat-card green"><div class="stat-icon"><svg class="icon"><use href="#i-calendar"/></svg></div><div class="stat-value" id="dash-eventos">0</div><div class="stat-label">Eventos esta semana</div></div>
+        <div class="stat-card yellow"><div class="stat-icon"><svg class="icon"><use href="#i-book"/></svg></div><div class="stat-value" id="dash-livros">0</div><div class="stat-label">Livros na biblioteca</div></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <div class="section-title">Progresso das Metas</div>
+          <div id="dash-progress"></div>
+        </div>
+        <div class="card">
+          <div class="section-title">Atividade Recente</div>
+          <div id="dash-activity"></div>
+        </div>
+      </div>
+      <div class="card mt-16">
+        <div class="section-title" style="margin-bottom:16px">Acesso Rápido</div>
+        <div class="flex gap-8" style="flex-wrap:wrap">
+          <button class="btn-sm" onclick="goPage('ferramentas')"><svg class="icon"><use href="#i-pencil"/></svg>Novo documento</button>
+          <button class="btn-sm" onclick="openModal('modal-meta')"><svg class="icon"><use href="#i-target"/></svg>Nova meta</button>
+          <button class="btn-sm" onclick="openModal('modal-evento')"><svg class="icon"><use href="#i-calendar"/></svg>Novo evento</button>
+          <button class="btn-sm" onclick="goPage('biblioteca')"><svg class="icon"><use href="#i-book"/></svg>Explorar biblioteca</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- FERRAMENTAS -->
+    <div class="page" id="page-ferramentas">
+      <div class="page-header">
+        <div class="page-title">Criar Conteúdo</div>
+        <div class="page-sub">Selecione o tipo de material que deseja criar</div>
+      </div>
+      <div class="grid-4">
+        <div class="tool-card" onclick="openTool('mapa')">
+          <div class="tool-icon"><svg class="icon"><use href="#i-network"/></svg></div>
+          <div class="tool-name">Mapa Mental</div>
+          <div class="tool-desc">Organize ideias visualmente com nós e conexões</div>
+        </div>
+        <div class="tool-card" onclick="openTool('planilha')">
+          <div class="tool-icon"><svg class="icon"><use href="#i-table"/></svg></div>
+          <div class="tool-name">Planilha</div>
+          <div class="tool-desc">Tabelas, notas e cálculos organizados</div>
+        </div>
+        <div class="tool-card" onclick="openTool('documento')">
+          <div class="tool-icon"><svg class="icon"><use href="#i-text"/></svg></div>
+          <div class="tool-name">Documento</div>
+          <div class="tool-desc">Escreva relatórios, resumos e anotações</div>
+        </div>
+        <div class="tool-card" onclick="openTool('apresentacao')">
+          <div class="tool-icon"><svg class="icon"><use href="#i-presentation"/></svg></div>
+          <div class="tool-name">Apresentação</div>
+          <div class="tool-desc">Crie slides e apresentações acadêmicas</div>
+        </div>
+      </div>
+      <div id="tool-area" style="margin-top:24px"></div>
+    </div>
+
+    <!-- METAS -->
+    <div class="page" id="page-metas">
+      <div class="page-header flex-center" style="justify-content:space-between">
+        <div>
+          <div class="page-title">Metas de Estudo</div>
+          <div class="page-sub">Acompanhe seus objetivos acadêmicos</div>
+        </div>
+        <button class="btn-add" onclick="openModal('modal-meta')">+ Nova Meta</button>
+      </div>
+      <div class="flex gap-8" style="margin-bottom:20px">
+        <button class="mm-btn active" onclick="filterMetas('todas',this)">Todas</button>
+        <button class="mm-btn" onclick="filterMetas('pendente',this)">Pendentes</button>
+        <button class="mm-btn" onclick="filterMetas('concluida',this)">Concluídas</button>
+        <button class="mm-btn" onclick="filterMetas('urgente',this)">Urgentes</button>
+      </div>
+      <div id="metas-list"></div>
+    </div>
+
+    <!-- CRONOGRAMA -->
+    <div class="page" id="page-cronograma">
+      <div class="page-header flex-center" style="justify-content:space-between">
+        <div>
+          <div class="page-title">Cronograma Semanal</div>
+          <div class="page-sub">Semana de <span id="semana-label">—</span></div>
+        </div>
+        <div class="flex gap-8">
+          <button class="btn-sm" onclick="semanaNav(-1)">← Anterior</button>
+          <button class="btn-sm" onclick="semanaNav(0)">Hoje</button>
+          <button class="btn-sm" onclick="semanaNav(1)">Próxima →</button>
+          <button class="btn-add" onclick="openModal('modal-evento')">+ Evento</button>
+        </div>
+      </div>
+      <div class="week-grid" id="week-grid"></div>
+      <div id="cron-empty" class="empty-state" style="display:none"><div class="empty-icon"><svg class="icon"><use href="#i-calendar"/></svg></div><div>Nenhum evento no cronograma</div><button class="btn-sm" onclick="openModal('modal-evento')">Adicionar primeiro evento</button></div>
+    </div>
+
+    <!-- ARQUIVOS -->
+    <div class="page" id="page-arquivos">
+      <div class="page-header">
+        <div class="page-title">Gestão de Arquivos</div>
+        <div class="page-sub">Todos os seus materiais em um só lugar</div>
+      </div>
+      <div style="margin-bottom:20px">
+        <div class="section-title">Pastas</div>
+        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Mapas Mentais</span><span id="folder-mapa" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
+        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Documentos</span><span id="folder-documento" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
+        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Planilhas</span><span id="folder-planilha" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
+        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Apresentações</span><span id="folder-apresentacao" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
+      </div>
+      <div>
+        <div class="section-title">Arquivos Recentes</div>
+        <div class="file-grid" id="files-grid"></div>
+      </div>
+    </div>
+
+    <!-- BIBLIOTECA -->
+    <div class="page" id="page-biblioteca">
+      <div class="page-header">
+        <div class="page-title">Biblioteca Virtual</div>
+        <div class="page-sub">Explore e pesquise materiais acadêmicos <span class="coming-soon"><svg class="icon"><use href="#i-zap"/></svg> Em expansão</span></div>
+      </div>
+      <div class="search-bar">
+        <input class="search-input" id="bib-search" placeholder="Pesquisar livros, apostilas, artigos..." onkeydown="if(event.key==='Enter')buscarLivros()" />
+        <button class="btn-search" onclick="buscarLivros()">Buscar</button>
+      </div>
+      <div class="flex gap-8" style="margin-bottom:20px;flex-wrap:wrap">
+        <button class="mm-btn active" onclick="filterBib('todos',this)">Todos</button>
+        <button class="mm-btn" onclick="filterBib('matematica',this)">Matemática</button>
+        <button class="mm-btn" onclick="filterBib('computacao',this)">Computação</button>
+        <button class="mm-btn" onclick="filterBib('fisica',this)">Física</button>
+        <button class="mm-btn" onclick="filterBib('linguagens',this)">Linguagens</button>
+      </div>
+      <div class="flex gap-8" style="margin-bottom:16px"><button class="btn-add" onclick="openModal('modal-livro')">+ Cadastrar livro</button><button class="btn-sm" onclick="filterBib('lista',this)">Minha lista de leitura</button></div>
+      <div id="books-list"></div>
+    </div>
+
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal-overlay" id="modal-meta">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Nova Meta</div>
+      <button class="modal-close" onclick="closeModal('modal-meta')">✕</button>
+    </div>
+    <div class="form-group"><label>Nome da Meta</label><input type="text" id="meta-nome" placeholder="Ex: Estudar Cálculo III" /></div>
+    <div class="form-group"><label>Disciplina / Área</label><input type="text" id="meta-disciplina" placeholder="Ex: Matemática" /></div>
+    <div class="form-group"><label>Prazo</label><input type="date" id="meta-prazo" /></div>
+    <div class="form-group"><label>Prioridade</label>
+      <select id="meta-prioridade"><option value="normal">Normal</option><option value="urgente">Urgente</option><option value="baixa">Baixa</option></select>
+    </div>
+    <button class="btn-primary" onclick="addMeta()">Criar Meta</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-evento">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Novo Evento</div>
+      <button class="modal-close" onclick="closeModal('modal-evento')">✕</button>
+    </div>
+    <div class="form-group"><label>Título</label><input type="text" id="ev-titulo" placeholder="Ex: Prova de Algoritmos" /></div>
+    <div class="form-group"><label>Data</label><input type="date" id="ev-data" /></div>
+    <div class="form-group"><label>Horário</label><input type="time" id="ev-hora" /></div>
+    <div class="form-group"><label>Tipo</label>
+      <select id="ev-tipo"><option value="blue">Aula</option><option value="purple">Prova</option><option value="green">Entrega</option><option value="yellow">Estudo</option></select>
+    </div>
+    <button class="btn-primary" onclick="addEvento()">Adicionar ao Cronograma</button>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-tool">
+  <div class="modal" style="width:700px;max-width:95vw">
+    <div class="modal-header">
+      <div class="modal-title" id="tool-modal-title">Ferramenta</div>
+      <button class="modal-close" onclick="closeModal('modal-tool')">✕</button>
+    </div>
+    <div id="tool-modal-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-livro"><div class="modal">
+  <div class="modal-header"><div class="modal-title">Cadastrar livro no catálogo compartilhado</div><button class="modal-close" onclick="closeModal('modal-livro')">Fechar</button></div>
+  <div class="form-group"><label>Título</label><input id="livro-titulo" maxlength="200"></div>
+  <div class="form-group"><label>Autor</label><input id="livro-autor" maxlength="200"></div>
+  <div class="form-group"><label>Área</label><select id="livro-area"><option value="matematica">Matemática</option><option value="computacao">Computação</option><option value="fisica">Física</option><option value="linguagens">Linguagens</option></select></div>
+  <div class="form-group"><label>Tags separadas por vírgula</label><input id="livro-tags" placeholder="programação, algoritmos"></div>
+  <button class="btn-primary" onclick="addBook()">Salvar no catálogo</button>
+</div></div>
+<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg">Salvo!</span></div>
+
+<!-- SCRIPTS (ordem importa: state primeiro, main por último; animations.js depois de tudo) -->
+<script src="js/state.js"></script>
+<script src="js/navigation.js"></script>
+<script src="js/api.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/tools.js"></script>
+<script src="js/mindmap.js"></script>
+<script src="js/planilha.js"></script>
+<script src="js/apresentacao.js"></script>
+<script src="js/metas.js"></script>
+<script src="js/cronograma.js"></script>
+<script src="js/arquivos.js"></script>
+<script src="js/biblioteca.js"></script>
+<script src="js/dashboard.js"></script>
+<script src="js/integration.js"></script>
+<script src="js/main.js"></script>
+<script src="js/animations.js"></script>
+</body>
+</html>
