@@ -86,7 +86,31 @@ function ownerId(): int {
     return (int) $_SESSION['uid'];
 }
 function userData(int $id): array|false {
-    return one("SELECT u.id, u.nome, u.email, COALESCE(c.nome, '') AS curso FROM usuario u LEFT JOIN curso c ON c.id=u.curso_id WHERE u.id=?", [$id]);
+    return one("SELECT u.id, u.nome, u.email, COALESCE(c.nome, '') AS curso, u.foto, u.criado_em FROM usuario u LEFT JOIN curso c ON c.id=u.curso_id WHERE u.id=?", [$id]);
+}
+// Conteúdo completo de um arquivo do usuário (usado ao abrir e ao exportar).
+function fileContent(int $id, string $codigo): array {
+    switch ($codigo) {
+        case 'documento': return ['conteudo'=>one('SELECT conteudo FROM documento WHERE arquivo_id=?',[$id])['conteudo'] ?? ''];
+        case 'planilha':
+            $c=one('SELECT qtd_linhas AS rows,qtd_colunas AS cols FROM planilha WHERE arquivo_id=?',[$id]) ?: ['rows'=>5,'cols'=>5];
+            $c['cells']=rows('SELECT linha,coluna,valor FROM planilha_celula WHERE planilha_id=?',[$id]);
+            return $c;
+        case 'mapa': return ['nodes'=>rows('SELECT id,no_pai_id AS parent,rotulo AS label,pos_x AS x,pos_y AS y,cor AS color FROM mapa_no WHERE mapa_id=? ORDER BY id',[$id])];
+        case 'flashcards': return ['cards'=>rows('SELECT id,frente,verso,caixa,proxima_revisao AS proxima,acertos,erros FROM flashcard WHERE baralho_id=? ORDER BY ordem',[$id])];
+    }
+    return [];
+}
+// Confere a senha atual; após 5 erros bloqueia por 1 minuto (mesma regra do login).
+function verifyPassword(int $uid, mixed $pass): void {
+    if (($_SESSION['pw_block_until'] ?? 0) > time()) fail('Muitas tentativas. Aguarde um minuto.', 429);
+    $row=one('SELECT senha_hash FROM usuario WHERE id=?',[$uid]);
+    if (!is_string($pass) || !$row || !password_verify($pass,$row['senha_hash'])) {
+        $_SESSION['pw_attempts']=($_SESSION['pw_attempts'] ?? 0)+1;
+        if ($_SESSION['pw_attempts']>=5) { $_SESSION['pw_block_until']=time()+60; $_SESSION['pw_attempts']=0; }
+        fail('Senha atual incorreta.',403);
+    }
+    unset($_SESSION['pw_attempts'],$_SESSION['pw_block_until']);
 }
 function activity(int $uid, int $type, string $description): void {
     // Tipos são os IDs das tabelas de domínio do SQL fornecido.
@@ -114,5 +138,6 @@ function state(int $uid): array {
         'atividades' => rows('SELECT a.descricao AS texto,t.cor,EXTRACT(EPOCH FROM a.criado_em)*1000 AS ts FROM atividade a JOIN tipo_atividade t ON t.id=a.tipo_atividade_id WHERE a.usuario_id=? ORDER BY a.criado_em DESC,a.id DESC LIMIT 20', [$uid]),
         'resumo' => one('SELECT * FROM vw_dashboard_resumo WHERE usuario_id=?', [$uid]),
         'progresso' => rows('SELECT * FROM vw_progresso_metas WHERE usuario_id=? ORDER BY disciplina', [$uid]),
+        'revisoes' => array_map(fn($r) => ['id'=>(int)$r['id'],'nome'=>$r['nome'],'total'=>(int)$r['total'],'pendentes'=>(int)$r['pendentes']], rows("SELECT a.id,regexp_replace(a.nome,'\.cards$','') AS nome,count(f.id) AS total,count(f.id) FILTER (WHERE f.proxima_revisao<=current_date) AS pendentes FROM arquivo a JOIN baralho b ON b.arquivo_id=a.id LEFT JOIN flashcard f ON f.baralho_id=a.id WHERE a.usuario_id=? GROUP BY a.id ORDER BY pendentes DESC,a.atualizado_em DESC", [$uid])),
     ];
 }

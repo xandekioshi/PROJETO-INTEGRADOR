@@ -3,11 +3,31 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="color-scheme" content="light dark">
 <title>EstudaFlow — Gestão Acadêmica</title>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=Lexend:wght@300;400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<script>
+  // Decide antes da pintura se a introdução completa deve tocar (uma vez por sessão do navegador).
+  (function () {
+    var d = document.documentElement, played = false, p = {};
+    try { played = sessionStorage.getItem('ef_intro') === '1'; sessionStorage.setItem('ef_intro', '1'); } catch (e) {}
+    // Preferências de tema e acessibilidade (ver js/a11y.js), aplicadas antes da pintura para não piscar.
+    try { p = JSON.parse(localStorage.getItem('ef_a11y') || '{}') || {}; } catch (e) {}
+    var t = p.theme === 'light' || p.theme === 'dark' ? p.theme : (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    d.setAttribute('data-theme', t);
+    if (p.fs) d.style.setProperty('--fs', p.fs);
+    ['contrast', 'font', 'spacing', 'links', 'motion', 'cursor'].forEach(function (k) { if (p[k]) d.classList.add('a11y-' + k); });
+    if (p.libras !== false) d.classList.add('a11y-libras');
+    if (played || p.motion || matchMedia('(prefers-reduced-motion: reduce)').matches) d.classList.add('intro-quick');
+    d.classList.add('booting');
+  })();
+</script>
 </head>
 <body>
+<a class="skip-link" href="#conteudo" onclick="return skipToContent()">Pular para o conteúdo</a>
 
 <!-- ÍCONES (sprite SVG minimalista). Uso: <svg class="icon"><use href="#i-nome"/></svg> -->
 <svg xmlns="http://www.w3.org/2000/svg" width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -23,40 +43,217 @@
   <symbol id="i-text" viewBox="0 0 24 24"><path d="M17 10H3M21 6H3M21 14H3M17 18H3"/></symbol>
   <symbol id="i-presentation" viewBox="0 0 24 24"><path d="M2 3h20"/><path d="M21 3v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V3"/><path d="m7 21 5-5 5 5"/></symbol>
   <symbol id="i-zap" viewBox="0 0 24 24"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24"><path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></symbol>
+  <symbol id="i-save" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><path d="M17 21v-8H7v8M7 3v5h8"/></symbol>
+  <symbol id="i-move" viewBox="0 0 24 24"><path d="M5 9l-3 3 3 3M9 5l3-3 3 3M15 19l-3 3-3-3M19 9l3 3-3 3M2 12h20M12 2v20"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+  <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></symbol>
+  <symbol id="i-eye" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-eye-off" viewBox="0 0 24 24"><path d="M9.9 4.2A10.4 10.4 0 0 1 12 4c6.5 0 10 8 10 8a17.6 17.6 0 0 1-2.2 3.2M6.6 6.6A17.4 17.4 0 0 0 2 12s3.5 8 10 8a9.7 9.7 0 0 0 5.4-1.6"/><path d="M14.1 14.1a3 3 0 1 1-4.2-4.2M2 2l20 20"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+  <symbol id="i-monitor" viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></symbol>
+  <symbol id="i-a11y" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="7.2" r="1.3"/><path d="M7 10l5 1 5-1M12 11v3.5M9.5 18l2.5-3.5 2.5 3.5"/></symbol>
+  <symbol id="i-contrast" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 2v20" /><path d="M12 2a10 10 0 0 1 0 20z" fill="currentColor"/></symbol>
+  <symbol id="i-type" viewBox="0 0 24 24"><path d="M4 7V4h16v3M9 20h6M12 4v16"/></symbol>
+  <symbol id="i-spacing" viewBox="0 0 24 24"><path d="M9 6h12M9 12h12M9 18h12"/><path d="M4 4v16M2.5 6 4 4l1.5 2M2.5 18 4 20l1.5-2"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></symbol>
+  <symbol id="i-pause" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M10 15V9M14 15V9"/></symbol>
+  <symbol id="i-guide" viewBox="0 0 24 24"><path d="M3 5h18M3 19h18"/><rect x="2" y="9.5" width="20" height="5" rx="1"/></symbol>
+  <symbol id="i-cursor" viewBox="0 0 24 24"><path d="M4 3l7 18 2.5-7.5L21 11z"/></symbol>
+  <symbol id="i-volume" viewBox="0 0 24 24"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/></symbol>
+  <symbol id="i-hand" viewBox="0 0 24 24"><path d="M18 11V6a2 2 0 0 0-4 0v5M14 10V4a2 2 0 0 0-4 0v6M10 10.5V6a2 2 0 0 0-4 0v8"/><path d="M18 8a2 2 0 1 1 4 0v6a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.9-6-2.4l-3.6-3.6a2 2 0 0 1 2.8-2.8L7 15"/></symbol>
+  <symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24"><path d="M5 12h14"/></symbol>
+  <symbol id="i-cards" viewBox="0 0 24 24"><rect x="7" y="3" width="14" height="16" rx="2"/><path d="M3 7.5v11A2.5 2.5 0 0 0 5.5 21H15"/><path d="M11 9h6M11 13h4"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7 4.5v15l12-7.5z"/></symbol>
+  <symbol id="i-branch" viewBox="0 0 24 24"><rect x="2" y="9" width="7" height="6" rx="1.5"/><rect x="15" y="3" width="7" height="6" rx="1.5"/><rect x="15" y="15" width="7" height="6" rx="1.5"/><path d="M9 12h3M12 6v12M12 6h3M12 18h3"/></symbol>
+  <symbol id="i-undo" viewBox="0 0 24 24"><path d="M9 14 4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/></symbol>
+  <symbol id="i-redo" viewBox="0 0 24 24"><path d="m15 14 5-5-5-5"/><path d="M20 9H9a5 5 0 0 0 0 10h3"/></symbol>
+  <symbol id="i-focus" viewBox="0 0 24 24"><path d="M3 8V5a2 2 0 0 1 2-2h3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M8 21H5a2 2 0 0 1-2-2v-3"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="i-maximize" viewBox="0 0 24 24"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></symbol>
+  <symbol id="i-minimize" viewBox="0 0 24 24"><path d="M4 14h6v6M20 10h-6V4M14 10l7-7M3 21l7-7"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11M4 6h.01M4 12h.01M4 18h.01"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
+  <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7.5 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5z"/><circle cx="12" cy="13" r="3.5"/></symbol>
+  <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
 </svg>
 
-<!-- AUTH SCREEN -->
+<!-- INTRODUÇÃO (toca ao abrir o site; clique ou tecla pula) -->
+<div id="intro" aria-hidden="true">
+  <div class="intro-inner">
+    <div class="intro-word">
+      <span style="--i:0">E</span><span style="--i:1">s</span><span style="--i:2">t</span><span style="--i:3">u</span><span style="--i:4">d</span><span style="--i:5">a</span><span class="intro-italic" style="--i:6">F</span><span class="intro-italic" style="--i:7">l</span><span class="intro-italic" style="--i:8">o</span><span class="intro-italic" style="--i:9">w</span>
+    </div>
+    <div class="intro-line"></div>
+    <div class="intro-caption">Gestão acadêmica</div>
+  </div>
+</div>
+
+<!-- PÁGINA INICIAL (pré-login) + PAINEL DE ACESSO -->
 <div id="auth-screen">
-  <div class="auth-card">
-    <div class="auth-logo">✦ EstudaFlow</div>
-    <div class="auth-tagline">Seu ecossistema de aprendizado acadêmico</div>
-    <div class="auth-tabs">
-      <div class="auth-tab active" onclick="switchAuthTab('login')">Entrar</div>
-      <div class="auth-tab" onclick="switchAuthTab('register')">Cadastrar</div>
+  <header class="lp-nav" id="lp-nav">
+    <div class="lp-container lp-nav-inner">
+      <a class="lp-logo" href="#topo" aria-label="EstudaFlow, início">Estuda<em>Flow</em></a>
+      <nav class="lp-links" aria-label="Seções da página">
+        <a href="#recursos">Recursos</a>
+        <a href="#como-funciona">Como funciona</a>
+      </nav>
+      <div class="lp-nav-actions">
+        <button type="button" class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar modo escuro"><svg class="icon i-moon"><use href="#i-moon"/></svg><svg class="icon i-sun"><use href="#i-sun"/></svg></button>
+        <button class="lp-btn-ghost" onclick="openAuth('login')">Entrar</button>
+        <button class="lp-btn-dark" onclick="openAuth('register')">Criar conta</button>
+      </div>
+    </div>
+  </header>
+
+  <main id="topo" tabindex="-1">
+    <section class="lp-hero lp-container">
+      <div class="lp-eyebrow hero-seq" style="--d:0">Plataforma acadêmica</div>
+      <h1 class="lp-title">
+        <span class="w"><span style="--d:1">Seus</span></span>
+        <span class="w"><span style="--d:2">estudos,</span></span>
+        <span class="w"><span style="--d:3"><em>organizados</em></span></span>
+        <span class="w"><span style="--d:4">em</span></span>
+        <span class="w"><span style="--d:5">um</span></span>
+        <span class="w"><span style="--d:6">só</span></span>
+        <span class="w"><span style="--d:7">fluxo.</span></span>
+      </h1>
+      <p class="lp-lead hero-seq" style="--d:8">Metas, cronograma, materiais e biblioteca no mesmo lugar. Planeje a semana, produza seus conteúdos e acompanhe o progresso sem trocar de ferramenta.</p>
+      <div class="lp-cta hero-seq" style="--d:9">
+        <button class="lp-btn-dark lp-btn-lg" onclick="openAuth('register')">Começar gratuitamente <svg class="icon"><use href="#i-arrow"/></svg></button>
+        <button class="lp-btn-outline lp-btn-lg" onclick="openAuth('login')">Já tenho conta</button>
+      </div>
+
+      <!-- Prévia ilustrada do painel (decorativa) -->
+      <div class="lp-preview hero-seq" style="--d:11" aria-hidden="true">
+        <div class="pv-bar"><i></i><i></i><i></i><span>estudaflow</span></div>
+        <div class="pv-body">
+          <div class="pv-side">
+            <div class="pv-brand">Estuda<em>Flow</em></div>
+            <div class="pv-nav active"><svg class="icon"><use href="#i-grid"/></svg>Dashboard</div>
+            <div class="pv-nav"><svg class="icon"><use href="#i-pencil"/></svg>Criar conteúdo</div>
+            <div class="pv-nav"><svg class="icon"><use href="#i-target"/></svg>Metas</div>
+            <div class="pv-nav"><svg class="icon"><use href="#i-calendar"/></svg>Cronograma</div>
+            <div class="pv-nav"><svg class="icon"><use href="#i-folder"/></svg>Arquivos</div>
+            <div class="pv-nav"><svg class="icon"><use href="#i-book"/></svg>Biblioteca</div>
+          </div>
+          <div class="pv-main">
+            <div class="pv-hello">Olá, Ana</div>
+            <div class="pv-stats">
+              <div><b>12</b><span>Documentos</span></div>
+              <div><b>7/10</b><span>Metas</span></div>
+              <div><b>5</b><span>Eventos</span></div>
+              <div><b>18</b><span>Livros</span></div>
+            </div>
+            <div class="pv-row">
+              <div class="pv-card">
+                <div class="pv-label">Progresso das metas</div>
+                <div class="pv-prog"><span>Cálculo</span><div><i style="--w:82%"></i></div></div>
+                <div class="pv-prog"><span>Algoritmos</span><div><i style="--w:64%"></i></div></div>
+                <div class="pv-prog"><span>Física</span><div><i style="--w:41%"></i></div></div>
+              </div>
+              <div class="pv-card">
+                <div class="pv-label">Esta semana</div>
+                <div class="pv-week">
+                  <div><small>Seg</small><i class="c1"></i></div>
+                  <div><small>Ter</small><i class="c2"></i><i class="c3"></i></div>
+                  <div><small>Qua</small></div>
+                  <div><small>Qui</small><i class="c1"></i></div>
+                  <div><small>Sex</small><i class="c4"></i></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lp-section lp-container" id="recursos">
+      <div class="lp-section-head" data-reveal>
+        <div class="lp-eyebrow">Recursos</div>
+        <h2 class="lp-h2">Tudo o que o semestre pede,<br><em>sem excesso.</em></h2>
+      </div>
+      <div class="lp-features">
+        <article class="lp-feature" data-reveal><svg class="icon"><use href="#i-target"/></svg><h3>Metas de estudo</h3><p>Defina objetivos por disciplina, com prazo e prioridade, e veja o progresso de cada matéria.</p></article>
+        <article class="lp-feature" data-reveal><svg class="icon"><use href="#i-calendar"/></svg><h3>Cronograma semanal</h3><p>Aulas, provas, entregas e sessões de estudo organizadas em uma visão clara da semana.</p></article>
+        <article class="lp-feature" data-reveal><svg class="icon"><use href="#i-network"/></svg><h3>Mapas mentais</h3><p>Organize ideias com tópicos, cores e atalhos de teclado. Arraste, reorganize e exporte como imagem.</p></article>
+        <article class="lp-feature" data-reveal><svg class="icon"><use href="#i-text"/></svg><h3>Documentos e planilhas</h3><p>Resumos, relatórios e controle de notas criados direto na plataforma.</p></article>
+        <article class="lp-feature" data-reveal><svg class="icon"><use href="#i-cards"/></svg><h3>Flashcards inteligentes</h3><p>Revise com repetição espaçada: o sistema mostra cada cartão na hora certa para fixar o conteúdo.</p></article>
+        <article class="lp-feature" data-reveal><svg class="icon"><use href="#i-book"/></svg><h3>Biblioteca</h3><p>Um catálogo compartilhado por área e tags, com a sua lista de leitura pessoal.</p></article>
+      </div>
+    </section>
+
+    <section class="lp-section lp-container" id="como-funciona">
+      <div class="lp-section-head" data-reveal>
+        <div class="lp-eyebrow">Como funciona</div>
+        <h2 class="lp-h2">Três passos para<br><em>começar hoje.</em></h2>
+      </div>
+      <ol class="lp-steps">
+        <li data-reveal><span class="lp-step-n">01</span><h3>Crie sua conta</h3><p>Informe seu nome, curso e e-mail. Leva menos de um minuto.</p></li>
+        <li data-reveal><span class="lp-step-n">02</span><h3>Planeje</h3><p>Cadastre suas metas e monte o cronograma da semana com aulas e provas.</p></li>
+        <li data-reveal><span class="lp-step-n">03</span><h3>Acompanhe</h3><p>Produza seus materiais e veja no painel o quanto já avançou.</p></li>
+      </ol>
+    </section>
+
+    <section class="lp-container">
+      <div class="lp-final" data-reveal>
+        <h2 class="lp-h2">Comece o semestre<br><em>com clareza.</em></h2>
+        <button class="lp-btn-light lp-btn-lg" onclick="openAuth('register')">Criar conta gratuita <svg class="icon"><use href="#i-arrow"/></svg></button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="lp-footer lp-container">
+    <span class="lp-logo">Estuda<em>Flow</em></span>
+    <span>Plataforma de gestão acadêmica · <span id="lp-year">2026</span></span>
+  </footer>
+
+  <!-- Painel lateral de acesso -->
+  <div class="auth-overlay" id="auth-overlay" onclick="closeAuth()"></div>
+  <aside class="auth-card" id="auth-panel" role="dialog" aria-modal="true" aria-labelledby="auth-heading" aria-hidden="true">
+    <button class="auth-close" onclick="closeAuth()" aria-label="Fechar"><svg class="icon"><use href="#i-x"/></svg></button>
+    <div class="auth-logo">Estuda<em>Flow</em></div>
+    <h2 class="auth-heading" id="auth-heading">Bem-vindo de volta</h2>
+    <div class="auth-tagline" id="auth-sub">Entre para continuar de onde parou.</div>
+    <div class="auth-tabs" role="tablist" aria-label="Tipo de acesso">
+      <div class="auth-tab active" role="tab" aria-selected="true" aria-controls="login-form" onclick="switchAuthTab('login')">Entrar</div>
+      <div class="auth-tab" role="tab" aria-selected="false" aria-controls="register-form" onclick="switchAuthTab('register')">Cadastrar</div>
+      <span class="auth-tab-pill" aria-hidden="true"></span>
     </div>
     <div id="login-form">
-      <div class="form-group"><label>E-mail</label><input type="email" id="login-email" placeholder="seu@email.com" /></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="login-pass" placeholder="••••••••" /></div>
+      <div class="form-group"><label for="login-email">E-mail</label><input type="email" id="login-email" placeholder="seu@email.com" autocomplete="email" /></div>
+      <div class="form-group"><div class="label-row"><label for="login-pass">Senha</label><button type="button" class="link-btn" onclick="showForgot()">Esqueceu a senha?</button></div><div class="pw-field"><input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" /><button type="button" class="pw-toggle" onclick="togglePassword('login-pass',this)" aria-label="Mostrar senha" aria-pressed="false" aria-controls="login-pass"><svg class="icon"><use href="#i-eye"/></svg></button></div></div>
       <button class="btn-primary" onclick="doLogin()">Entrar na plataforma</button>
     </div>
+    <div id="forgot-form" style="display:none">
+      <div class="form-group"><label for="forgot-email">E-mail da conta</label><input type="email" id="forgot-email" placeholder="seu@email.com" autocomplete="email" /></div>
+      <button class="btn-primary" onclick="sendRecovery()">Enviar link de recuperação</button>
+      <button type="button" class="link-btn back-link" onclick="switchAuthTab('login')"><svg class="icon"><use href="#i-arrow"/></svg>Voltar para o login</button>
+    </div>
     <div id="register-form" style="display:none">
-      <div class="form-group"><label>Nome completo</label><input type="text" id="reg-name" placeholder="Seu nome" /></div>
-      <div class="form-group"><label>E-mail</label><input type="email" id="reg-email" placeholder="seu@email.com" /></div>
-      <div class="form-group"><label>Curso</label><input type="text" id="reg-curso" placeholder="Ex: Ciência da Computação" /></div>
-      <div class="form-group"><label>Senha</label><input type="password" id="reg-pass" placeholder="Min. 6 caracteres" /></div>
+      <div class="form-group"><label for="reg-name">Nome completo</label><input type="text" id="reg-name" placeholder="Seu nome" autocomplete="name" /></div>
+      <div class="form-group"><label for="reg-email">E-mail</label><input type="email" id="reg-email" placeholder="seu@email.com" autocomplete="email" /></div>
+      <div class="form-group"><label for="reg-curso">Curso</label><input type="text" id="reg-curso" placeholder="Ex: Ciência da Computação" /></div>
+      <div class="form-group"><label for="reg-pass">Senha</label><div class="pw-field"><input type="password" id="reg-pass" placeholder="Mínimo de 6 caracteres" autocomplete="new-password" /><button type="button" class="pw-toggle" onclick="togglePassword('reg-pass',this)" aria-label="Mostrar senha" aria-pressed="false" aria-controls="reg-pass"><svg class="icon"><use href="#i-eye"/></svg></button></div><div class="field-hint" id="reg-pass-hint">Use pelo menos 6 caracteres.</div></div>
       <button class="btn-primary" onclick="doRegister()">Criar conta gratuita</button>
     </div>
-  </div>
+  </aside>
 </div>
 
 <!-- MAIN APP -->
 <div id="app">
-  <div class="sidebar">
+  <div class="sidebar" role="navigation" aria-label="Menu principal">
     <div class="sidebar-logo">
-      <span>✦ EstudaFlow</span>
-      <small>Plataforma Acadêmica</small>
+      <span>Estuda<em>Flow</em></span>
+      <small>Plataforma acadêmica</small>
     </div>
-    <nav class="sidebar-nav">
+    <nav class="sidebar-nav" aria-label="Páginas">
       <div class="nav-item active" onclick="goPage('dashboard')"><span class="nav-icon"><svg class="icon"><use href="#i-grid"/></svg></span> Dashboard</div>
       <div class="nav-item" onclick="goPage('ferramentas')"><span class="nav-icon"><svg class="icon"><use href="#i-pencil"/></svg></span> Criar Conteúdo</div>
       <div class="nav-item" onclick="goPage('metas')"><span class="nav-icon"><svg class="icon"><use href="#i-target"/></svg></span> Metas</div>
@@ -65,17 +262,19 @@
       <div class="nav-item" onclick="goPage('biblioteca')"><span class="nav-icon"><svg class="icon"><use href="#i-book"/></svg></span> Biblioteca</div>
     </nav>
     <div class="sidebar-footer">
-      <div class="user-chip" onclick="doLogout()">
+      <div class="user-chip" onclick="openProfile()" aria-label="Abrir meu perfil" title="Meu perfil">
         <div class="avatar" id="sidebar-avatar">A</div>
-        <div>
+        <div class="user-chip-text">
           <div class="user-name" id="sidebar-name">Estudante</div>
-          <div class="user-role">Sair da conta</div>
+          <div class="user-role">Ver perfil</div>
         </div>
       </div>
+      <button type="button" class="theme-toggle" onclick="doLogout()" aria-label="Sair da conta" title="Sair da conta"><svg class="icon"><use href="#i-logout"/></svg></button>
+      <button type="button" class="theme-toggle" onclick="toggleTheme()" aria-label="Alternar modo escuro"><svg class="icon i-moon"><use href="#i-moon"/></svg><svg class="icon i-sun"><use href="#i-sun"/></svg></button>
     </div>
   </div>
 
-  <main class="main">
+  <main class="main" id="conteudo" tabindex="-1">
 
     <!-- DASHBOARD -->
     <div class="page active" id="page-dashboard">
@@ -100,11 +299,16 @@
         </div>
       </div>
       <div class="card mt-16">
+        <div class="section-title">Revisões de hoje</div>
+        <div id="dash-reviews"></div>
+      </div>
+      <div class="card mt-16">
         <div class="section-title" style="margin-bottom:16px">Acesso Rápido</div>
         <div class="flex gap-8" style="flex-wrap:wrap">
           <button class="btn-sm" onclick="goPage('ferramentas')"><svg class="icon"><use href="#i-pencil"/></svg>Novo documento</button>
           <button class="btn-sm" onclick="openModal('modal-meta')"><svg class="icon"><use href="#i-target"/></svg>Nova meta</button>
           <button class="btn-sm" onclick="openModal('modal-evento')"><svg class="icon"><use href="#i-calendar"/></svg>Novo evento</button>
+          <button class="btn-sm" onclick="goPage('ferramentas');openTool('flashcards')"><svg class="icon"><use href="#i-cards"/></svg>Novo baralho</button>
           <button class="btn-sm" onclick="goPage('biblioteca')"><svg class="icon"><use href="#i-book"/></svg>Explorar biblioteca</button>
         </div>
       </div>
@@ -120,7 +324,7 @@
         <div class="tool-card" onclick="openTool('mapa')">
           <div class="tool-icon"><svg class="icon"><use href="#i-network"/></svg></div>
           <div class="tool-name">Mapa Mental</div>
-          <div class="tool-desc">Organize ideias visualmente com nós e conexões</div>
+          <div class="tool-desc">Organize ideias em tópicos conectados, com cores e reorganização automática</div>
         </div>
         <div class="tool-card" onclick="openTool('planilha')">
           <div class="tool-icon"><svg class="icon"><use href="#i-table"/></svg></div>
@@ -132,10 +336,10 @@
           <div class="tool-name">Documento</div>
           <div class="tool-desc">Escreva relatórios, resumos e anotações</div>
         </div>
-        <div class="tool-card" onclick="openTool('apresentacao')">
-          <div class="tool-icon"><svg class="icon"><use href="#i-presentation"/></svg></div>
-          <div class="tool-name">Apresentação</div>
-          <div class="tool-desc">Crie slides e apresentações acadêmicas</div>
+        <div class="tool-card" onclick="openTool('flashcards')">
+          <div class="tool-icon"><svg class="icon"><use href="#i-cards"/></svg></div>
+          <div class="tool-name">Flashcards</div>
+          <div class="tool-desc">Memorize com revisão espaçada e acompanhe o que já fixou</div>
         </div>
       </div>
       <div id="tool-area" style="margin-top:24px"></div>
@@ -148,7 +352,7 @@
           <div class="page-title">Metas de Estudo</div>
           <div class="page-sub">Acompanhe seus objetivos acadêmicos</div>
         </div>
-        <button class="btn-add" onclick="openModal('modal-meta')">+ Nova Meta</button>
+        <button class="btn-add" onclick="openModal('modal-meta')"><svg class="icon"><use href="#i-plus"/></svg>Nova meta</button>
       </div>
       <div class="flex gap-8" style="margin-bottom:20px">
         <button class="mm-btn active" onclick="filterMetas('todas',this)">Todas</button>
@@ -170,7 +374,7 @@
           <button class="btn-sm" onclick="semanaNav(-1)">← Anterior</button>
           <button class="btn-sm" onclick="semanaNav(0)">Hoje</button>
           <button class="btn-sm" onclick="semanaNav(1)">Próxima →</button>
-          <button class="btn-add" onclick="openModal('modal-evento')">+ Evento</button>
+          <button class="btn-add" onclick="openModal('modal-evento')"><svg class="icon"><use href="#i-plus"/></svg>Evento</button>
         </div>
       </div>
       <div class="week-grid" id="week-grid"></div>
@@ -188,7 +392,7 @@
         <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Mapas Mentais</span><span id="folder-mapa" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
         <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Documentos</span><span id="folder-documento" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
         <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Planilhas</span><span id="folder-planilha" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
-        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Apresentações</span><span id="folder-apresentacao" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
+        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Flashcards</span><span id="folder-flashcards" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
       </div>
       <div>
         <div class="section-title">Arquivos Recentes</div>
@@ -213,7 +417,7 @@
         <button class="mm-btn" onclick="filterBib('fisica',this)">Física</button>
         <button class="mm-btn" onclick="filterBib('linguagens',this)">Linguagens</button>
       </div>
-      <div class="flex gap-8" style="margin-bottom:16px"><button class="btn-add" onclick="openModal('modal-livro')">+ Cadastrar livro</button><button class="btn-sm" onclick="filterBib('lista',this)">Minha lista de leitura</button></div>
+      <div class="flex gap-8" style="margin-bottom:16px"><button class="btn-add" onclick="openModal('modal-livro')"><svg class="icon"><use href="#i-plus"/></svg>Cadastrar livro</button><button class="btn-sm" onclick="filterBib('lista',this)">Minha lista de leitura</button></div>
       <div id="books-list"></div>
     </div>
 
@@ -225,7 +429,7 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">Nova Meta</div>
-      <button class="modal-close" onclick="closeModal('modal-meta')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-meta')"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <div class="form-group"><label>Nome da Meta</label><input type="text" id="meta-nome" placeholder="Ex: Estudar Cálculo III" /></div>
     <div class="form-group"><label>Disciplina / Área</label><input type="text" id="meta-disciplina" placeholder="Ex: Matemática" /></div>
@@ -241,7 +445,7 @@
   <div class="modal">
     <div class="modal-header">
       <div class="modal-title">Novo Evento</div>
-      <button class="modal-close" onclick="closeModal('modal-evento')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-evento')"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <div class="form-group"><label>Título</label><input type="text" id="ev-titulo" placeholder="Ex: Prova de Algoritmos" /></div>
     <div class="form-group"><label>Data</label><input type="date" id="ev-data" /></div>
@@ -257,31 +461,182 @@
   <div class="modal" style="width:700px;max-width:95vw">
     <div class="modal-header">
       <div class="modal-title" id="tool-modal-title">Ferramenta</div>
-      <button class="modal-close" onclick="closeModal('modal-tool')">✕</button>
+      <button class="modal-close" onclick="closeModal('modal-tool')"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <div id="tool-modal-body"></div>
   </div>
 </div>
 
+<div class="modal-overlay" id="modal-study">
+  <div class="modal modal-study">
+    <div class="modal-header">
+      <div><div class="section-title" style="margin-bottom:4px">Revisão</div><div class="modal-title" id="study-title">Flashcards</div></div>
+      <button class="modal-close" onclick="closeModal('modal-study')" aria-label="Fechar revisão"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div id="study-body"></div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-profile">
+  <div class="modal modal-profile">
+    <div class="modal-header">
+      <div class="modal-title">Meu perfil</div>
+      <button class="modal-close" onclick="closeModal('modal-profile')" aria-label="Fechar perfil"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+
+    <div class="profile-hero">
+      <div class="profile-avatar-wrap" id="pf-drop" title="Arraste uma imagem aqui para trocar a foto">
+        <div class="avatar avatar-xl" id="pf-avatar" aria-hidden="true">A</div>
+        <button type="button" class="pf-cam" onclick="pickPhoto()" aria-label="Trocar foto de perfil"><svg class="icon"><use href="#i-camera"/></svg></button>
+        <input type="file" id="pf-file" accept="image/png,image/jpeg,image/webp,image/gif" hidden>
+      </div>
+      <div class="profile-id">
+        <div class="profile-name" id="pf-name"></div>
+        <div class="profile-meta" id="pf-meta"></div>
+        <div class="profile-since" id="pf-since"></div>
+        <div class="flex gap-8" style="flex-wrap:wrap">
+          <button type="button" class="btn-sm" onclick="pickPhoto()"><svg class="icon"><use href="#i-camera"/></svg>Trocar foto</button>
+          <button type="button" class="btn-sm" id="pf-remove" onclick="removePhoto()">Remover foto</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="profile-stats" id="pf-stats" aria-live="polite"></div>
+
+    <div class="pf-tabs" role="tablist" aria-label="Seções do perfil">
+      <button type="button" role="tab" id="pf-t-perfil" data-tab="perfil" aria-controls="pf-tab-perfil">Perfil</button>
+      <button type="button" role="tab" id="pf-t-seguranca" data-tab="seguranca" aria-controls="pf-tab-seguranca">Segurança</button>
+      <button type="button" role="tab" id="pf-t-preferencias" data-tab="preferencias" aria-controls="pf-tab-preferencias">Preferências</button>
+      <button type="button" role="tab" id="pf-t-dados" data-tab="dados" aria-controls="pf-tab-dados">Seus dados</button>
+    </div>
+
+    <div class="pf-panel" role="tabpanel" id="pf-tab-perfil" aria-labelledby="pf-t-perfil">
+      <div class="pf-grid">
+        <div class="form-group"><label for="pf-nome">Nome de exibição</label><input type="text" id="pf-nome" maxlength="120" autocomplete="name" /></div>
+        <div class="form-group"><label for="pf-curso">Curso</label><input type="text" id="pf-curso" maxlength="120" placeholder="Ex: Ciência da Computação" /></div>
+      </div>
+      <div class="form-group"><label for="pf-email">E-mail</label><input type="email" id="pf-email" readonly aria-describedby="pf-email-hint" /><div class="field-hint" id="pf-email-hint">O e-mail é usado para entrar na conta e não pode ser alterado por aqui.</div></div>
+      <div class="pf-actions"><button type="button" class="btn-add" onclick="saveProfile()"><svg class="icon"><use href="#i-save"/></svg>Salvar alterações</button></div>
+    </div>
+
+    <div class="pf-panel" role="tabpanel" id="pf-tab-seguranca" aria-labelledby="pf-t-seguranca" hidden>
+      <div class="form-group"><label for="pf-atual">Senha atual</label><div class="pw-field"><input type="password" id="pf-atual" autocomplete="current-password" maxlength="72" /><button type="button" class="pw-toggle" onclick="togglePassword('pf-atual',this)" aria-label="Mostrar senha" aria-pressed="false" aria-controls="pf-atual"><svg class="icon"><use href="#i-eye"/></svg></button></div></div>
+      <div class="pf-grid">
+        <div class="form-group"><label for="pf-nova">Nova senha</label><div class="pw-field"><input type="password" id="pf-nova" autocomplete="new-password" maxlength="72" /><button type="button" class="pw-toggle" onclick="togglePassword('pf-nova',this)" aria-label="Mostrar senha" aria-pressed="false" aria-controls="pf-nova"><svg class="icon"><use href="#i-eye"/></svg></button></div><div class="pw-meter" id="pf-meter" data-score="0" aria-hidden="true"><i></i><i></i><i></i><i></i></div><div class="field-hint" id="pf-meter-label" aria-live="polite"></div></div>
+        <div class="form-group"><label for="pf-confirma">Confirmar nova senha</label><div class="pw-field"><input type="password" id="pf-confirma" autocomplete="new-password" maxlength="72" /><button type="button" class="pw-toggle" onclick="togglePassword('pf-confirma',this)" aria-label="Mostrar senha" aria-pressed="false" aria-controls="pf-confirma"><svg class="icon"><use href="#i-eye"/></svg></button></div></div>
+      </div>
+      <div class="pf-actions"><button type="button" class="btn-add" onclick="changePassword()">Alterar senha</button></div>
+    </div>
+
+    <div class="pf-panel" role="tabpanel" id="pf-tab-preferencias" aria-labelledby="pf-t-preferencias" hidden>
+      <div class="pf-row">
+        <div><b>Tema</b><p>Claro, escuro ou igual ao do seu sistema.</p></div>
+        <div class="a11y-seg pf-theme" role="radiogroup" aria-label="Tema">
+          <button type="button" role="radio" data-theme-set="light" aria-checked="false" onclick="setTheme('light')"><svg class="icon"><use href="#i-sun"/></svg>Claro</button>
+          <button type="button" role="radio" data-theme-set="dark" aria-checked="false" onclick="setTheme('dark')"><svg class="icon"><use href="#i-moon"/></svg>Escuro</button>
+          <button type="button" role="radio" data-theme-set="system" aria-checked="false" onclick="setTheme('system')"><svg class="icon"><use href="#i-monitor"/></svg>Sistema</button>
+        </div>
+      </div>
+      <div class="pf-row">
+        <div><b>Acessibilidade</b><p>Tamanho do texto, alto contraste, leitura em voz alta, Libras e mais.</p></div>
+        <button type="button" class="btn-sm" onclick="openA11yFromProfile()"><svg class="icon"><use href="#i-a11y"/></svg>Abrir opções</button>
+      </div>
+      <div class="pf-row">
+        <div><b>Introdução animada</b><p>Ver novamente a animação de abertura do site.</p></div>
+        <button type="button" class="btn-sm" onclick="replayIntro()"><svg class="icon"><use href="#i-play"/></svg>Rever agora</button>
+      </div>
+    </div>
+
+    <div class="pf-panel" role="tabpanel" id="pf-tab-dados" aria-labelledby="pf-t-dados" hidden>
+      <div class="pf-row">
+        <div><b>Exportar meus dados</b><p>Baixe um arquivo JSON com metas, eventos, arquivos, flashcards e atividades.</p></div>
+        <button type="button" class="btn-sm" onclick="exportData()"><svg class="icon"><use href="#i-download"/></svg>Exportar</button>
+      </div>
+      <div class="pf-danger">
+        <h4>Excluir conta</h4>
+        <p>Apaga permanentemente sua conta e tudo o que você criou. Essa ação não pode ser desfeita. Considere exportar seus dados antes.</p>
+        <div class="pf-grid">
+          <div class="form-group"><label for="pf-del-senha">Sua senha</label><div class="pw-field"><input type="password" id="pf-del-senha" autocomplete="current-password" maxlength="72" /><button type="button" class="pw-toggle" onclick="togglePassword('pf-del-senha',this)" aria-label="Mostrar senha" aria-pressed="false" aria-controls="pf-del-senha"><svg class="icon"><use href="#i-eye"/></svg></button></div></div>
+          <div class="form-group"><label for="pf-del-confirma">Digite <b>EXCLUIR</b> para confirmar</label><input type="text" id="pf-del-confirma" autocomplete="off" spellcheck="false" /></div>
+        </div>
+        <button type="button" class="btn-danger" id="pf-del-btn" onclick="deleteAccount()" disabled>Excluir minha conta</button>
+      </div>
+    </div>
+
+    <div class="profile-foot">
+      <button type="button" class="btn-sm" onclick="doLogout()"><svg class="icon"><use href="#i-logout"/></svg>Sair da conta</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-overlay" id="modal-livro"><div class="modal">
-  <div class="modal-header"><div class="modal-title">Cadastrar livro no catálogo compartilhado</div><button class="modal-close" onclick="closeModal('modal-livro')">Fechar</button></div>
+  <div class="modal-header"><div class="modal-title">Cadastrar livro</div><button class="modal-close" onclick="closeModal('modal-livro')" aria-label="Fechar"><svg class="icon"><use href="#i-x"/></svg></button></div>
   <div class="form-group"><label>Título</label><input id="livro-titulo" maxlength="200"></div>
   <div class="form-group"><label>Autor</label><input id="livro-autor" maxlength="200"></div>
   <div class="form-group"><label>Área</label><select id="livro-area"><option value="matematica">Matemática</option><option value="computacao">Computação</option><option value="fisica">Física</option><option value="linguagens">Linguagens</option></select></div>
   <div class="form-group"><label>Tags separadas por vírgula</label><input id="livro-tags" placeholder="programação, algoritmos"></div>
   <button class="btn-primary" onclick="addBook()">Salvar no catálogo</button>
 </div></div>
-<div class="toast" id="toast"><div class="toast-dot"></div><span id="toast-msg">Salvo!</span></div>
+<!-- ASSISTENTE DE ACESSIBILIDADE (Alt + A) -->
+<button type="button" id="a11y-fab" class="a11y-fab" aria-label="Acessibilidade (Alt + A)" aria-expanded="false" aria-controls="a11y-panel" title="Acessibilidade (Alt + A)"><svg class="icon"><use href="#i-a11y"/></svg></button>
+<div id="a11y-panel" class="a11y-panel" role="dialog" aria-labelledby="a11y-title" hidden>
+  <div class="a11y-head">
+    <div><h2 id="a11y-title">Acessibilidade</h2><p>Ajuste o site do seu jeito. As escolhas ficam salvas neste navegador.</p></div>
+    <button type="button" class="modal-close" data-a11y-close aria-label="Fechar acessibilidade"><svg class="icon"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="a11y-body">
+    <div class="a11y-label" id="a11y-theme-label">Tema</div>
+    <div class="a11y-seg" role="radiogroup" aria-labelledby="a11y-theme-label">
+      <button type="button" role="radio" data-theme-set="light" aria-checked="false"><svg class="icon"><use href="#i-sun"/></svg>Claro</button>
+      <button type="button" role="radio" data-theme-set="dark" aria-checked="false"><svg class="icon"><use href="#i-moon"/></svg>Escuro</button>
+      <button type="button" role="radio" data-theme-set="system" aria-checked="false"><svg class="icon"><use href="#i-monitor"/></svg>Sistema</button>
+    </div>
+    <div class="a11y-label" id="a11y-fs-label">Tamanho do texto</div>
+    <div class="a11y-stepper" role="group" aria-labelledby="a11y-fs-label">
+      <button type="button" data-fs="-1" aria-label="Diminuir texto"><svg class="icon"><use href="#i-minus"/></svg></button>
+      <output id="a11y-fs-value" aria-live="polite">100%</output>
+      <button type="button" data-fs="1" aria-label="Aumentar texto"><svg class="icon"><use href="#i-plus"/></svg></button>
+    </div>
+    <div class="a11y-label">Recursos</div>
+    <div class="a11y-grid">
+      <button type="button" class="a11y-opt" data-opt="contrast" aria-pressed="false"><svg class="icon"><use href="#i-contrast"/></svg><span><b>Alto contraste</b><small>Cores e bordas mais fortes</small></span></button>
+      <button type="button" class="a11y-opt" data-opt="font" aria-pressed="false"><svg class="icon"><use href="#i-type"/></svg><span><b>Fonte legível</b><small>Letras mais abertas (Lexend)</small></span></button>
+      <button type="button" class="a11y-opt" data-opt="spacing" aria-pressed="false"><svg class="icon"><use href="#i-spacing"/></svg><span><b>Espaçamento</b><small>Mais espaço entre letras e linhas</small></span></button>
+      <button type="button" class="a11y-opt" data-opt="links" aria-pressed="false"><svg class="icon"><use href="#i-link"/></svg><span><b>Destacar links</b><small>Sublinha links e realça botões</small></span></button>
+      <button type="button" class="a11y-opt" data-opt="motion" aria-pressed="false"><svg class="icon"><use href="#i-pause"/></svg><span><b>Pausar animações</b><small>Remove movimentos e transições</small></span></button>
+      <button type="button" class="a11y-opt" data-opt="guide" aria-pressed="false"><svg class="icon"><use href="#i-guide"/></svg><span><b>Guia de leitura</b><small>Faixa que acompanha o mouse</small></span></button>
+      <button type="button" class="a11y-opt" data-opt="cursor" aria-pressed="false"><svg class="icon"><use href="#i-cursor"/></svg><span><b>Cursor ampliado</b><small>Ponteiro maior e mais visível</small></span></button>
+      <button type="button" class="a11y-opt" data-opt="tts" aria-pressed="false"><svg class="icon"><use href="#i-volume"/></svg><span><b>Leitura em voz alta</b><small>Lê o item clicado ou focado</small></span></button>
+      <button type="button" class="a11y-opt" data-opt="libras" aria-pressed="false"><svg class="icon"><use href="#i-hand"/></svg><span><b>Tradutor de Libras</b><small>Mostra o VLibras (gov.br)</small></span></button>
+    </div>
+  </div>
+  <div class="a11y-foot">
+    <button type="button" class="btn-sm" data-a11y-reset><svg class="icon"><use href="#i-reset"/></svg>Redefinir tudo</button>
+    <span>Atalho: <kbd>Alt</kbd> + <kbd>A</kbd></span>
+  </div>
+</div>
+<div id="a11y-guide" class="a11y-guide" aria-hidden="true" hidden></div>
+<div id="a11y-live" class="sr-only" aria-live="polite"></div>
+
+<!-- VLibras (estrutura exigida pelo widget) -->
+<div vw class="enabled">
+  <div vw-access-button class="active"></div>
+  <div vw-plugin-wrapper><div class="vw-plugin-top-wrapper"></div></div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><div class="toast-dot"></div><span id="toast-msg">Salvo!</span></div>
 
 <!-- SCRIPTS (ordem importa: state primeiro, main por último; animations.js depois de tudo) -->
 <script src="js/state.js"></script>
 <script src="js/navigation.js"></script>
 <script src="js/api.js"></script>
 <script src="js/auth.js"></script>
+<script src="js/landing.js"></script>
+<script src="js/profile.js"></script>
 <script src="js/tools.js"></script>
 <script src="js/mindmap.js"></script>
 <script src="js/planilha.js"></script>
-<script src="js/apresentacao.js"></script>
+<script src="js/flashcards.js"></script>
 <script src="js/metas.js"></script>
 <script src="js/cronograma.js"></script>
 <script src="js/arquivos.js"></script>
@@ -290,5 +645,9 @@
 <script src="js/integration.js"></script>
 <script src="js/main.js"></script>
 <script src="js/animations.js"></script>
+<script src="js/a11y.js"></script>
+<!-- VLibras: tradutor oficial de Português para Libras (requer internet) -->
+<script src="https://vlibras.gov.br/app/vlibras-plugin.js"></script>
+<script>try { new window.VLibras.Widget('https://vlibras.gov.br/app'); } catch (e) {}</script>
 </body>
 </html>

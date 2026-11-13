@@ -2,8 +2,8 @@
 declare(strict_types=1);
 require __DIR__ . '/../app/bootstrap.php';
 $action = $_GET['action'] ?? 'session';
-$readActions = ['session', 'state', 'file_get'];
-$writeActions = ['register','login','logout','meta_add','meta_toggle','meta_delete','event_add','event_delete','file_save','file_delete','book_add','reading_toggle'];
+$readActions = ['session', 'state', 'file_get', 'profile_stats', 'export'];
+$writeActions = ['register','login','logout','meta_add','meta_toggle','meta_delete','event_add','event_delete','file_save','file_delete','book_add','reading_toggle','card_review','profile_update','avatar_set','password_change','account_delete'];
 try {
     if (!in_array($action, array_merge($readActions, $writeActions), true)) fail('Ação desconhecida.', 404);
     $read = in_array($action, $readActions, true);
@@ -61,16 +61,40 @@ try {
         $id=integer($_GET['id'] ?? null);
         $file=one('SELECT a.id,a.nome,t.codigo FROM arquivo a JOIN tipo_arquivo t ON t.id=a.tipo_arquivo_id WHERE a.id=? AND a.usuario_id=?',[$id,$uid]);
         if (!$file) fail('Arquivo não encontrado.',404);
-        $content=[];
-        switch ($file['codigo']) {
-            case 'documento': $content=['conteudo'=>one('SELECT conteudo FROM documento WHERE arquivo_id=?',[$id])['conteudo']]; break;
-            case 'planilha':
-                $content=one('SELECT qtd_linhas AS rows,qtd_colunas AS cols FROM planilha WHERE arquivo_id=?',[$id]);
-                $content['cells']=rows('SELECT linha,coluna,valor FROM planilha_celula WHERE planilha_id=?',[$id]); break;
-            case 'apresentacao': $content=['slides'=>rows('SELECT titulo,corpo FROM slide WHERE apresentacao_id=? ORDER BY ordem',[$id])]; break;
-            case 'mapa': $content=['nodes'=>rows('SELECT id,no_pai_id AS parent,rotulo AS label,pos_x AS x,pos_y AS y,cor AS color FROM mapa_no WHERE mapa_id=? ORDER BY id',[$id])]; break;
-        }
-        reply(['file'=>$file,'content'=>$content]);
+        reply(['file'=>$file,'content'=>fileContent($id,$file['codigo'])]);
+    }
+    if ($action === 'profile_stats') {
+        $n=one("SELECT
+            (SELECT count(*) FROM arquivo WHERE usuario_id=?) AS arquivos,
+            (SELECT count(*) FROM meta WHERE usuario_id=? AND concluida) AS metas_concluidas,
+            (SELECT count(*) FROM meta WHERE usuario_id=?) AS metas,
+            (SELECT COALESCE(sum(f.acertos+f.erros),0) FROM flashcard f JOIN arquivo a ON a.id=f.baralho_id WHERE a.usuario_id=?) AS revisoes,
+            (SELECT count(*) FROM flashcard f JOIN arquivo a ON a.id=f.baralho_id WHERE a.usuario_id=? AND f.caixa>=4) AS dominados",[$uid,$uid,$uid,$uid,$uid]);
+        // Dias com alguma atividade (atividades registradas ou revisões de flashcards).
+        $dias=array_column(rows("SELECT DISTINCT d FROM (
+            SELECT criado_em::date AS d FROM atividade WHERE usuario_id=?
+            UNION SELECT f.revisado_em::date FROM flashcard f JOIN arquivo a ON a.id=f.baralho_id WHERE a.usuario_id=? AND f.revisado_em IS NOT NULL
+        ) x ORDER BY d DESC",[$uid,$uid]),'d');
+        $set=array_flip($dias); $streak=0; $day=new DateTimeImmutable('today');
+        if (!isset($set[$day->format('Y-m-d')])) $day=$day->modify('-1 day'); // a sequência continua até o fim de hoje
+        while (isset($set[$day->format('Y-m-d')])) { $streak++; $day=$day->modify('-1 day'); }
+        $stats=array_map('intval',$n);
+        $stats['sequencia']=$streak; $stats['dias_ativos']=count($dias);
+        reply(['stats'=>$stats]);
+    }
+    if ($action === 'export') {
+        // Portabilidade dos dados (LGPD): tudo o que pertence à conta, sem o hash da senha.
+        $files=rows('SELECT a.id,a.nome,t.codigo AS tipo,p.nome AS pasta,a.tamanho_bytes,a.criado_em,a.atualizado_em FROM arquivo a JOIN tipo_arquivo t ON t.id=a.tipo_arquivo_id LEFT JOIN pasta p ON p.id=a.pasta_id WHERE a.usuario_id=? ORDER BY a.id',[$uid]);
+        foreach ($files as &$f) $f['conteudo']=fileContent((int)$f['id'],$f['tipo']); unset($f);
+        reply([
+            'gerado_em'=>date(DATE_ATOM),
+            'usuario'=>userData($uid),
+            'metas'=>rows("SELECT m.nome,COALESCE(d.nome,'Geral') AS disciplina,p.nome AS prioridade,m.prazo,m.concluida,m.concluida_em,m.criado_em FROM meta m LEFT JOIN disciplina d ON d.id=m.disciplina_id JOIN prioridade p ON p.id=m.prioridade_id WHERE m.usuario_id=? ORDER BY m.id",[$uid]),
+            'eventos'=>rows('SELECT e.titulo,e.data,e.hora,t.nome AS tipo FROM evento e JOIN tipo_evento t ON t.id=e.tipo_evento_id WHERE e.usuario_id=? ORDER BY e.data,e.hora',[$uid]),
+            'arquivos'=>$files,
+            'lista_de_leitura'=>rows('SELECT l.titulo,l.autor FROM lista_leitura r JOIN livro l ON l.id=r.livro_id WHERE r.usuario_id=? ORDER BY l.titulo',[$uid]),
+            'atividades'=>rows('SELECT a.descricao,t.codigo AS tipo,a.criado_em FROM atividade a JOIN tipo_atividade t ON t.id=a.tipo_atividade_id WHERE a.usuario_id=? ORDER BY a.criado_em',[$uid]),
+        ]);
     }
     // Uma transação salva a operação e sua atividade juntas.
     db()->beginTransaction();
@@ -114,6 +138,55 @@ try {
                 query('INSERT INTO livro_tag (livro_id,tag_id) VALUES (?,?)',[$book,$tid]);
             }
             activity($uid,5,'Adicionou livro: '.$titulo); break;
+        case 'card_review':
+            // Repetição espaçada (caixas de Leitner): errei volta para a caixa 1; acertei sobe uma caixa.
+            $card=one('SELECT f.id,f.caixa,a.nome FROM flashcard f JOIN arquivo a ON a.id=f.baralho_id WHERE f.id=? AND a.usuario_id=? FOR UPDATE OF f',[integer($data['id'] ?? null),$uid]);
+            if (!$card) fail('Cartão não encontrado.',404);
+            $resp=textField($data,'resposta',10);
+            $intervalos=[1=>1,2=>3,3=>7,4=>14,5=>30];
+            $caixa=(int)$card['caixa'];
+            if ($resp==='errei') { $caixa=1; $dias=0; }
+            elseif ($resp==='dificil') { $dias=1; }
+            elseif ($resp==='acertei') { $caixa=min(5,$caixa+1); $dias=$intervalos[$caixa]; }
+            else fail('Resposta inválida.');
+            $row=one('UPDATE flashcard SET caixa=?,proxima_revisao=current_date+?::int,acertos=acertos+?,erros=erros+?,revisado_em=now() WHERE id=? RETURNING caixa,proxima_revisao AS proxima',[$caixa,$dias,$resp==='errei'?0:1,$resp==='errei'?1:0,(int)$card['id']]);
+            db()->commit();
+            reply(['card'=>['id'=>(int)$card['id'],'caixa'=>(int)$row['caixa'],'proxima'=>$row['proxima'],'dias'=>$dias]]);
+        case 'profile_update':
+            $nome=textField($data,'nome',120);
+            $curso=textField($data,'curso',120,false);
+            $cursoId=$curso === '' ? null : (int)one('INSERT INTO curso (nome) VALUES (?) ON CONFLICT (nome) DO UPDATE SET nome=EXCLUDED.nome RETURNING id',[$curso])['id'];
+            query('UPDATE usuario SET nome=?,curso_id=?,atualizado_em=now() WHERE id=?',[$nome,$cursoId,$uid]);
+            break;
+        case 'avatar_set':
+            $foto=$data['foto'] ?? null;
+            if ($foto !== null) {
+                if (!is_string($foto) || strlen($foto)>400000 || !preg_match('#^data:image/(jpeg|png|webp);base64,([A-Za-z0-9+/=]+)$#',$foto,$m)) fail('Imagem inválida ou muito grande.');
+                $bin=base64_decode($m[2],true);
+                $info=$bin===false ? false : @getimagesizefromstring($bin);
+                if (!$info || $info[0]<16 || $info[1]<16 || $info[0]>1024 || $info[1]>1024) fail('Não foi possível ler a imagem enviada.');
+            }
+            query('UPDATE usuario SET foto=?,atualizado_em=now() WHERE id=?',[$foto,$uid]);
+            break;
+        case 'password_change':
+            verifyPassword($uid,$data['atual'] ?? null);
+            $nova=$data['nova'] ?? '';
+            if (!is_string($nova) || strlen($nova)<6 || strlen($nova)>72) fail('A nova senha precisa ter entre 6 e 72 caracteres.');
+            if (password_verify($nova,one('SELECT senha_hash FROM usuario WHERE id=?',[$uid])['senha_hash'])) fail('A nova senha precisa ser diferente da atual.');
+            query('UPDATE usuario SET senha_hash=?,atualizado_em=now() WHERE id=?',[password_hash($nova,PASSWORD_DEFAULT),$uid]);
+            db()->commit();
+            session_regenerate_id(true);
+            reply(['ok'=>true,'csrf'=>$_SESSION['csrf']]);
+        case 'account_delete':
+            if (($data['confirmacao'] ?? '') !== 'EXCLUIR') fail('Digite EXCLUIR para confirmar.');
+            verifyPassword($uid,$data['senha'] ?? null);
+            // Metas, eventos, arquivos, pastas e atividades são apagados em cascata pelo banco.
+            query('DELETE FROM usuario WHERE id=?',[$uid]);
+            db()->commit();
+            $_SESSION=[];
+            session_regenerate_id(true);
+            $_SESSION['csrf']=bin2hex(random_bytes(32));
+            reply(['ok'=>true,'csrf'=>$_SESSION['csrf']]);
         case 'reading_toggle':
             $bid=integer($data['id'] ?? null);
             if (!one('SELECT id FROM livro WHERE id=?',[$bid])) fail('Livro não encontrado.',404);

@@ -7,7 +7,9 @@ function goPage(page) {
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
   document.querySelectorAll('.nav-item').forEach(n => {
-    if (n.textContent.toLowerCase().includes(page.substring(0, 4).toLowerCase())) n.classList.add('active');
+    const on = n.textContent.toLowerCase().includes(page.substring(0, 4).toLowerCase());
+    n.classList.toggle('active', on);
+    if (on) n.setAttribute('aria-current', 'page'); else n.removeAttribute('aria-current');
   });
   if (page === 'cronograma') renderCronograma();
   if (page === 'dashboard') renderDashboard();
