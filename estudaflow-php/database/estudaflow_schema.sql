@@ -1,3 +1,4 @@
+-- Active: 1791565324654@@127.0.0.1@5432@estudaflow@estudaflow
 -- ============================================================
 -- EstudaFlow — Script de criação do banco (PostgreSQL 15+)
 -- 24 tabelas · 3 views · 3 triggers · dados iniciais de domínio

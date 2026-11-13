@@ -30,7 +30,7 @@ async function runUI(fn) {
 }
 function applyState(s) {
   currentUser=s.user; metas=s.metas; eventos=s.eventos; arquivos=s.arquivos;
-  books=s.books; pastas=s.pastas; dashboardResumo=s.resumo; dashboardProgresso=s.progresso;
+  books=s.books; pastas=s.pastas; revisoes=s.revisoes||[]; dashboardResumo=s.resumo; dashboardProgresso=s.progresso;
   atividades=s.atividades.map(a=>({...a,ts:Number(a.ts),cor:'var(--'+a.cor+')'}));
   arquivos=arquivos.map(f=>({...f,id:Number(f.id),tamanho:(Number(f.tamanho_bytes)/1024).toFixed(1)+' KB',data:new Date(f.atualizado_em).toLocaleDateString('pt-BR')}));
   eventos=eventos.map(e=>({...e,id:Number(e.id)}));

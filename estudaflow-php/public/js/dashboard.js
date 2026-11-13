@@ -42,7 +42,7 @@ function renderDashboard() {
   const prog = $('dash-progress');
   if (!metas.length) {
     prog.innerHTML = `<div class="empty-state">
-      <div class="empty-icon">🎯</div>
+      <div class="empty-icon"><svg class="icon"><use href="#i-target"/></svg></div>
       <div>Nenhuma meta criada ainda</div>
       <button class="btn-sm" onclick="openModal('modal-meta')">Criar primeira meta</button>
     </div>`;
@@ -64,5 +64,5 @@ function renderDashboard() {
   act.innerHTML = atividades.length
     ? atividades.slice(0, 6).map(a => `
       <div class="activity-item"><div class="activity-dot" style="background:${a.cor}"></div><div class="activity-text">${escapeHTML(a.texto)}</div><div class="activity-time">${timeAgo(a.ts)}</div></div>`).join('')
-    : `<div class="empty-state"><div class="empty-icon">🕑</div><div>Nenhuma atividade ainda</div></div>`;
+    : `<div class="empty-state"><div class="empty-icon"><svg class="icon"><use href="#i-clock"/></svg></div><div>Nenhuma atividade ainda</div></div>`;
 }

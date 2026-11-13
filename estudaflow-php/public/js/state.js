@@ -21,8 +21,4 @@ let books = [];
 let atividades = []; // { texto, cor, ts }
 
 let currentWeekOffset = 0;
-let mindmapNodes = [];
-let selectedNode = null;
-let mmMode_state = 'add';
 let plRows = 5, plCols = 5;
-let slides = [];
