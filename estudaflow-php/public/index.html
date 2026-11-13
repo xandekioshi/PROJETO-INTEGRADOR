@@ -82,6 +82,10 @@
   <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12M7 10l5 5 5-5M4 21h16"/></symbol>
   <symbol id="i-camera" viewBox="0 0 24 24"><path d="M14.5 4h-5L7.5 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3.5z"/><circle cx="12" cy="13" r="3.5"/></symbol>
   <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 22s8-3.5 8-10V5l-8-3-8 3v7c0 6.5 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></symbol>
+  <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.5a6.5 6.5 0 0 1 3.5 5.5"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 9.3-9.3M17 6l3 3M15 8l2 2"/></symbol>
 </svg>
 
 <!-- INTRODUÇÃO (toca ao abrir o site; clique ou tecla pula) -->
@@ -260,6 +264,7 @@
       <div class="nav-item" onclick="goPage('cronograma')"><span class="nav-icon"><svg class="icon"><use href="#i-calendar"/></svg></span> Cronograma</div>
       <div class="nav-item" onclick="goPage('arquivos')"><span class="nav-icon"><svg class="icon"><use href="#i-folder"/></svg></span> Arquivos</div>
       <div class="nav-item" onclick="goPage('biblioteca')"><span class="nav-icon"><svg class="icon"><use href="#i-book"/></svg></span> Biblioteca</div>
+      <div class="nav-item nav-admin" id="nav-admin" onclick="goPage('admin')" hidden><span class="nav-icon"><svg class="icon"><use href="#i-shield"/></svg></span> Administração</div>
     </nav>
     <div class="sidebar-footer">
       <div class="user-chip" onclick="openProfile()" aria-label="Abrir meu perfil" title="Meu perfil">
@@ -389,10 +394,14 @@
       </div>
       <div style="margin-bottom:20px">
         <div class="section-title">Pastas</div>
-        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Mapas Mentais</span><span id="folder-mapa" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
-        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Documentos</span><span id="folder-documento" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
-        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Planilhas</span><span id="folder-planilha" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
-        <div class="folder-row"><svg class="icon"><use href="#i-folder"/></svg><span style="font-size:.88rem;font-weight:500">Flashcards</span><span id="folder-flashcards" style="margin-left:auto;font-size:.78rem;color:var(--text3)">0 itens</span></div>
+        <button type="button" class="folder-row" data-folder="mapa" aria-expanded="false" aria-controls="fv-mapa" onclick="toggleFolder('mapa')"><svg class="icon"><use href="#i-folder"/></svg><span class="folder-name">Mapas Mentais</span><span id="folder-mapa" class="folder-count">0 itens</span><svg class="icon folder-chev"><use href="#i-chevron"/></svg></button>
+        <div class="folder-panel" id="fv-mapa" hidden></div>
+        <button type="button" class="folder-row" data-folder="documento" aria-expanded="false" aria-controls="fv-documento" onclick="toggleFolder('documento')"><svg class="icon"><use href="#i-folder"/></svg><span class="folder-name">Documentos</span><span id="folder-documento" class="folder-count">0 itens</span><svg class="icon folder-chev"><use href="#i-chevron"/></svg></button>
+        <div class="folder-panel" id="fv-documento" hidden></div>
+        <button type="button" class="folder-row" data-folder="planilha" aria-expanded="false" aria-controls="fv-planilha" onclick="toggleFolder('planilha')"><svg class="icon"><use href="#i-folder"/></svg><span class="folder-name">Planilhas</span><span id="folder-planilha" class="folder-count">0 itens</span><svg class="icon folder-chev"><use href="#i-chevron"/></svg></button>
+        <div class="folder-panel" id="fv-planilha" hidden></div>
+        <button type="button" class="folder-row" data-folder="flashcards" aria-expanded="false" aria-controls="fv-flashcards" onclick="toggleFolder('flashcards')"><svg class="icon"><use href="#i-folder"/></svg><span class="folder-name">Flashcards</span><span id="folder-flashcards" class="folder-count">0 itens</span><svg class="icon folder-chev"><use href="#i-chevron"/></svg></button>
+        <div class="folder-panel" id="fv-flashcards" hidden></div>
       </div>
       <div>
         <div class="section-title">Arquivos Recentes</div>
@@ -421,7 +430,37 @@
       <div id="books-list"></div>
     </div>
 
+    <!-- ADMINISTRAÇÃO (visível só para contas com papel 'admin'; a API também confere) -->
+    <div class="page" id="page-admin">
+      <div class="page-header flex-center" style="justify-content:space-between">
+        <div>
+          <div class="page-title">Administração</div>
+          <div class="page-sub">Usuários, acessos e conteúdos da plataforma</div>
+        </div>
+        <button class="btn-sm" onclick="loadAdmin(true)"><svg class="icon"><use href="#i-reset"/></svg>Atualizar</button>
+      </div>
+      <div class="adm-tabs" role="tablist" aria-label="Seções da administração">
+        <button class="mm-btn active" role="tab" aria-selected="true" data-tab="geral" onclick="admTab('geral')">Visão geral</button>
+        <button class="mm-btn" role="tab" aria-selected="false" data-tab="usuarios" onclick="admTab('usuarios')">Usuários</button>
+        <button class="mm-btn" role="tab" aria-selected="false" data-tab="acessos" onclick="admTab('acessos')">Acessos</button>
+        <button class="mm-btn" role="tab" aria-selected="false" data-tab="conteudos" onclick="admTab('conteudos')">Conteúdos</button>
+        <button class="mm-btn" role="tab" aria-selected="false" data-tab="auditoria" onclick="admTab('auditoria')">Auditoria</button>
+      </div>
+      <div id="adm-body" role="tabpanel"></div>
+    </div>
+
   </main>
+</div>
+
+<div class="modal-overlay" id="modal-adm-senha">
+  <div class="modal" style="width:460px;max-width:95vw">
+    <div class="modal-header">
+      <div class="modal-title">Senha temporária</div>
+      <button class="modal-close" onclick="closeModal('modal-adm-senha')" aria-label="Fechar"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <p class="adm-note">Nova senha de <strong id="adm-senha-nome"></strong>. Ela aparece só agora: copie e envie ao usuário, que deve trocá-la no perfil depois de entrar.</p>
+    <div class="adm-senha-box"><code id="adm-senha-valor"></code><button class="btn-sm" onclick="copyTempPassword()">Copiar</button></div>
+  </div>
 </div>
 
 <!-- MODALS -->
@@ -643,6 +682,7 @@
 <script src="js/biblioteca.js"></script>
 <script src="js/dashboard.js"></script>
 <script src="js/integration.js"></script>
+<script src="js/admin.js"></script>
 <script src="js/main.js"></script>
 <script src="js/animations.js"></script>
 <script src="js/a11y.js"></script>

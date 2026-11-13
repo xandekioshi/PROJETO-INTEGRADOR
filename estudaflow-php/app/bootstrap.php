@@ -83,10 +83,36 @@ function dateField(array $data, string $key, bool $required = false): ?string {
 }
 function ownerId(): int {
     if (empty($_SESSION['uid'])) fail('Entre na sua conta para continuar.', 401);
-    return (int) $_SESSION['uid'];
+    $uid = (int) $_SESSION['uid'];
+    // Uma conta desativada pelo administrador perde o acesso na hora, mesmo com a sessão aberta.
+    $u = one('SELECT ativo FROM usuario WHERE id=?', [$uid]);
+    if (!$u || !boolValue($u['ativo'])) {
+        unset($_SESSION['uid']);
+        fail($u ? 'Sua conta foi desativada por um administrador.' : 'Entre na sua conta para continuar.', 401);
+    }
+    return $uid;
+}
+function requireAdmin(int $uid): void {
+    $u = one('SELECT papel FROM usuario WHERE id=?', [$uid]);
+    if (!$u || $u['papel'] !== 'admin') fail('Acesso restrito a administradores.', 403);
 }
 function userData(int $id): array|false {
-    return one("SELECT u.id, u.nome, u.email, COALESCE(c.nome, '') AS curso, u.foto, u.criado_em FROM usuario u LEFT JOIN curso c ON c.id=u.curso_id WHERE u.id=?", [$id]);
+    $u = one("SELECT u.id, u.nome, u.email, COALESCE(c.nome, '') AS curso, u.foto, u.criado_em, u.papel, u.ativo FROM usuario u LEFT JOIN curso c ON c.id=u.curso_id WHERE u.id=?", [$id]);
+    if ($u) $u['ativo'] = boolValue($u['ativo']);
+    return $u;
+}
+// Registro de acessos (entradas, saídas e falhas) para o painel do administrador.
+function logAccess(?int $uid, ?string $email, string $tipo): void {
+    $ua = substr((string)preg_replace('/[^\x20-\x7E]/', '', (string)($_SERVER['HTTP_USER_AGENT'] ?? '')), 0, 255);
+    query('INSERT INTO acesso (usuario_id,email,tipo,ip,navegador) VALUES (?,?,?,?,?)', [$uid, $email, $tipo, substr((string)($_SERVER['REMOTE_ADDR'] ?? ''), 0, 45), $ua]);
+    if ($uid !== null && in_array($tipo, ['cadastro', 'login', 'retorno'], true)) {
+        query('UPDATE usuario SET ultimo_acesso=now() WHERE id=?', [$uid]);
+        $_SESSION['acesso_dia'] = date('Y-m-d');
+    }
+}
+function adminLog(int $adminId, string $acao, string $alvo, string $detalhes = ''): void {
+    $nome = one('SELECT nome FROM usuario WHERE id=?', [$adminId])['nome'] ?? 'Administrador';
+    query('INSERT INTO admin_log (admin_id,admin_nome,acao,alvo,detalhes) VALUES (?,?,?,?,?)', [$adminId, $nome, $acao, (string)iconv_substr($alvo, 0, 250, 'UTF-8'), $detalhes]);
 }
 // Conteúdo completo de um arquivo do usuário (usado ao abrir e ao exportar).
 function fileContent(int $id, string $codigo): array {

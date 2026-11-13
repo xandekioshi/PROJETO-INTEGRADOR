@@ -13,6 +13,7 @@ function goPage(page) {
   });
   if (page === 'cronograma') renderCronograma();
   if (page === 'dashboard') renderDashboard();
+  if (page === 'admin') loadAdmin(true);
 }
 
 function openModal(id) { document.getElementById(id).classList.add('open'); }

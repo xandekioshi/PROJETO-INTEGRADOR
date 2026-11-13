@@ -38,12 +38,8 @@ renderCronograma=function(){
 };
 const FILE_ICONS={mapa:'<svg class="icon"><use href="#i-network"/></svg>',planilha:'<svg class="icon"><use href="#i-table"/></svg>',documento:'<svg class="icon"><use href="#i-text"/></svg>',flashcards:'<svg class="icon"><use href="#i-cards"/></svg>'};
 function renderArquivos() {
-  const map={mapa:'Mapas Mentais',documento:'Documentos',planilha:'Planilhas',flashcards:'Flashcards'};
-  Object.entries(map).forEach(([k,nome])=>{
-    const p=pastas.find(p=>p.nome===nome), count=Number(p?.qtd_itens||0);
-    document.getElementById('folder-'+k).textContent=count+(count===1?' item':' itens');
-  });
-  document.getElementById('files-grid').innerHTML=arquivos.length?arquivos.map(f=>`<div class="file-card"><div class="file-icon-big">${FILE_ICONS[f.codigo]||FILE_ICONS.documento}</div><div class="file-name">${escapeHTML(f.nome)}</div><div class="file-meta">${escapeHTML(f.tamanho)} · ${escapeHTML(f.data)}</div><div class="flex gap-8" style="margin-top:12px;flex-wrap:wrap">${f.codigo==='flashcards'?`<button class="btn-add" onclick="startStudy(${f.id})">Estudar</button>`:''}<button class="btn-sm" onclick="openFile(${f.id})">${f.codigo==='flashcards'?'Editar':'Abrir'}</button><button class="btn-sm" onclick="deleteFile(${f.id})">Excluir</button></div></div>`).join(''):'<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><svg class="icon"><use href="#i-folder"/></svg></div><div>Nenhum arquivo salvo ainda.</div></div>';
+  renderFolders(); // pastas clicáveis: arquivos.js
+  document.getElementById('files-grid').innerHTML=arquivos.length?arquivos.slice(0,8).map(f=>`<div class="file-card"><div class="file-icon-big">${FILE_ICONS[f.codigo]||FILE_ICONS.documento}</div><div class="file-name">${escapeHTML(f.nome)}</div><div class="file-meta">${escapeHTML(f.tamanho)} · ${escapeHTML(f.data)}</div><div class="flex gap-8" style="margin-top:12px;flex-wrap:wrap">${f.codigo==='flashcards'?`<button class="btn-add" onclick="startStudy(${f.id})">Estudar</button>`:''}<button class="btn-sm" onclick="openFile(${f.id})">${f.codigo==='flashcards'?'Editar':'Abrir'}</button><button class="btn-sm" onclick="deleteFile(${f.id})">Excluir</button></div></div>`).join(''):'<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon"><svg class="icon"><use href="#i-folder"/></svg></div><div>Nenhum arquivo salvo ainda.</div></div>';
   renderDashboard();
 };
 async function deleteFile(id){ if(confirm('Excluir este arquivo e seu conteúdo?')) await runUI(()=>mutate('file_delete',{id})); }
