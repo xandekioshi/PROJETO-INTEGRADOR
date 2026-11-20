@@ -524,3 +524,4 @@
   .pf-stats-wrap { padding-top: 0; }
 }
 #modal-profile .btn-sm[hidden] { display: none; } /* "Remover foto" só aparece quando há foto */
+.btn-sm + .btn-add { margin-left: 14px; } /* botão principal depois de botões simples (ex.: planilha) */
