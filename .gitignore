@@ -1,2 +1,6 @@
 # Notas pessoais da sessão (não vão para o GitHub)
 /NOTAS-DO-PROJETO.md
+
+# Configuração do banco com senha (modelo: sinapse-php/app/config.example.php)
+/sinapse-php/app/config.php
+/sinapse-php/app/config.php.bak
