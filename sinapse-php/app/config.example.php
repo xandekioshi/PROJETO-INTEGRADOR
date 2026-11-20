@@ -9,5 +9,6 @@ return [
     'database' => 'sinapse',          // nome do banco
     'user'     => 'postgres',         // usuário do PostgreSQL
     'password' => '',                 // senha do usuário do PostgreSQL (não a do site)
+    'sslmode'  => 'prefer',           // use 'require' em bancos na nuvem (Neon, Supabase)
     'timezone' => 'America/Cuiaba',   // fuso horário usado nas datas
 ];

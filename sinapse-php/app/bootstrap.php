@@ -41,7 +41,7 @@ function db(): PDO {
     if (!is_file($path)) fail('Copie app/config.example.php para app/config.php e configure o banco.', 503);
     $c = require $path;
     date_default_timezone_set($c['timezone'] ?? 'America/Cuiaba');
-    $pdo = new PDO("pgsql:host={$c['host']};port={$c['port']};dbname={$c['database']}", $c['user'], $c['password'], [
+    $pdo = new PDO("pgsql:host={$c['host']};port={$c['port']};dbname={$c['database']};sslmode=" . ($c['sslmode'] ?? 'prefer'), $c['user'], $c['password'], [
         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
         PDO::ATTR_EMULATE_PREPARES => false,

@@ -6,7 +6,7 @@ declare(strict_types=1);
 if (PHP_SAPI !== 'cli') { http_response_code(404); exit; }
 
 $c = require __DIR__ . '/../app/config.php';
-$pdo = new PDO("pgsql:host={$c['host']};port={$c['port']};dbname={$c['database']}", $c['user'], $c['password'], [
+$pdo = new PDO("pgsql:host={$c['host']};port={$c['port']};dbname={$c['database']};sslmode=" . ($c['sslmode'] ?? 'prefer'), $c['user'], $c['password'], [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 ]);
 $files = glob(__DIR__ . '/../database/migrations/*.sql');

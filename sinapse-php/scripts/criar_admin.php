@@ -15,7 +15,7 @@ if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
 }
 
 $c = require __DIR__ . '/../app/config.php';
-$pdo = new PDO("pgsql:host={$c['host']};port={$c['port']};dbname={$c['database']}", $c['user'], $c['password'], [
+$pdo = new PDO("pgsql:host={$c['host']};port={$c['port']};dbname={$c['database']};sslmode=" . ($c['sslmode'] ?? 'prefer'), $c['user'], $c['password'], [
     PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 ]);
