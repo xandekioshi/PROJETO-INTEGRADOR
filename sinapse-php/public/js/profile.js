@@ -35,6 +35,7 @@ function openProfile() {
   updateUserUI();
   profileTab('perfil', false);
   openModal('modal-profile');
+  playProfile();
   loadProfileStats();
 }
 function profileTab(name, focus = true) {
@@ -63,10 +64,11 @@ async function loadProfileStats() {
     const { stats: s } = await api('profile_stats');
     const plural = (n, a, b) => n === 1 ? a : b;
     box.innerHTML = `
-      <div class="pf-stat"><b>${s.sequencia}</b><span>${plural(s.sequencia, 'dia seguido', 'dias seguidos')}</span></div>
-      <div class="pf-stat"><b>${s.arquivos}</b><span>${plural(s.arquivos, 'arquivo criado', 'arquivos criados')}</span></div>
-      <div class="pf-stat"><b>${s.metas_concluidas}<small>/${s.metas}</small></b><span>metas concluídas</span></div>
-      <div class="pf-stat"><b>${s.revisoes}</b><span>${plural(s.revisoes, 'cartão revisado', 'cartões revisados')}${s.dominados ? ` · ${s.dominados} ${plural(s.dominados, 'dominado', 'dominados')}` : ''}</span></div>`;
+      <div class="pf-stat" style="--t:.3"><b><span class="n">${s.sequencia}</span></b><span>${plural(s.sequencia, 'dia seguido', 'dias seguidos')}</span></div>
+      <div class="pf-stat" style="--t:.45"><b><span class="n">${s.arquivos}</span></b><span>${plural(s.arquivos, 'arquivo criado', 'arquivos criados')}</span></div>
+      <div class="pf-stat" style="--t:.6"><b><span class="n">${s.metas_concluidas}</span><small>/${s.metas}</small></b><span>metas concluídas</span></div>
+      <div class="pf-stat" style="--t:.75"><b><span class="n">${s.revisoes}</span></b><span>${plural(s.revisoes, 'cartão revisado', 'cartões revisados')}${s.dominados ? ` · ${s.dominados} ${plural(s.dominados, 'dominado', 'dominados')}` : ''}</span></div>`;
+    if (document.getElementById('modal-profile').classList.contains('pf-play')) box.querySelectorAll('.pf-stat .n').forEach(el => countUp(el, (parseFloat(el.closest('.pf-stat').style.getPropertyValue('--t')) || 0) * 1000 + 100));
   } catch (e) { box.innerHTML = '<div class="pf-stat-error">Não foi possível carregar as estatísticas.</div>'; }
   box.removeAttribute('aria-busy');
 }
@@ -182,4 +184,31 @@ async function deleteAccount() {
     showAuth();
     showToast('Sua conta e todos os seus dados foram excluídos.');
   });
+}
+
+// ---------- entrada animada (mesmo conceito do painel inicial) ----------
+// O avatar é o corpo de um neurônio: dendritos crescem em volta dele ao abrir o perfil,
+// o sinal corre pelo axônio dos números e cada bloco "dispara" em sequência (css/app.css).
+(function () {
+  const svg = document.querySelector('#modal-profile .pf-dendrites'); if (!svg) return;
+  let html = '';
+  for (let i = 0; i < 9; i++) {
+    const a = (i / 9) * Math.PI * 2 + 0.35, c = Math.cos(a), s = Math.sin(a);
+    const P = (r, da = 0) => `${((r) * Math.cos(a + da)).toFixed(1)} ${((r) * Math.sin(a + da)).toFixed(1)}`;
+    const len = 66 + (i % 3) * 5, d = i * 0.04;
+    html += `<path class="pd d1" style="--d:${d}" pathLength="1" d="M${P(46)} Q${P(56, 0.06)} ${P(len)}"/>`;
+    html += `<path class="pd d2" style="--d:${d + 0.12}" pathLength="1" d="M${P(58, 0.04)} Q${P(64, 0.16)} ${P(len - 2, 0.24)}"/>`;
+    html += `<circle class="pd-tip" style="--d:${d + 0.3}" cx="${(len * c).toFixed(1)}" cy="${(len * s).toFixed(1)}" r="1.8"/>`;
+  }
+  svg.innerHTML = html;
+})();
+let profileTimer = 0;
+function playProfile() {
+  const modal = document.getElementById('modal-profile');
+  modal.classList.remove('pf-play');
+  clearTimeout(profileTimer);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches || document.documentElement.classList.contains('a11y-motion')) return;
+  void modal.offsetWidth; // reinicia as animações
+  modal.classList.add('pf-play');
+  profileTimer = setTimeout(() => modal.classList.remove('pf-play'), 2400);
 }

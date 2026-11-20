@@ -2,7 +2,7 @@
 let csrfToken = '';
 let uiBusy = false;
 let pastas = [], dashboardResumo = null, dashboardProgresso = [];
-let editingFileId = null, plData = {}, bibFilter = 'todos', metaFilter = 'todas';
+let editingFileId = null, plData = {}, metaFilter = 'todas';
 const field = id => document.getElementById(id).value;
 async function api(action, payload = null, params = {}) {
   const qs = new URLSearchParams({action, ...params});
@@ -30,12 +30,12 @@ async function runUI(fn) {
 }
 function applyState(s) {
   currentUser=s.user; metas=s.metas; eventos=s.eventos; arquivos=s.arquivos;
-  books=s.books; pastas=s.pastas; revisoes=s.revisoes||[]; dashboardResumo=s.resumo; dashboardProgresso=s.progresso;
+  pastas=s.pastas; revisoes=s.revisoes||[]; dashboardResumo=s.resumo; dashboardProgresso=s.progresso;
   atividades=s.atividades.map(a=>({...a,ts:Number(a.ts),cor:'var(--'+a.cor+')'}));
   arquivos=arquivos.map(f=>({...f,id:Number(f.id),tamanho:(Number(f.tamanho_bytes)/1024).toFixed(1)+' KB',data:new Date(f.atualizado_em).toLocaleDateString('pt-BR')}));
   eventos=eventos.map(e=>({...e,id:Number(e.id)}));
 }
 function renderAll() {
-  renderMetas(metaFilter); renderCronograma(); renderArquivos(); renderBiblioteca(); renderDashboard();
+  renderMetas(metaFilter); renderCronograma(); renderArquivos(); renderToolsPage(); renderDashboard();
 }
 async function mutate(action, data) { applyState(await api(action,data)); renderAll(); }

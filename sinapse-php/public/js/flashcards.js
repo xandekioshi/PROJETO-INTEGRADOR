@@ -186,21 +186,4 @@ document.addEventListener('keydown', e => {
   };
 })();
 
-// ---------- Painel: revisões de hoje ----------
-function renderRevisoes() {
-  const box = document.getElementById('dash-reviews'); if (!box) return;
-  if (!revisoes.length) {
-    box.innerHTML = `<div class="empty-state"><div class="empty-icon"><svg class="icon"><use href="#i-cards"/></svg></div>
-      <div>Crie um baralho de flashcards para revisar com repetição espaçada.</div>
-      <button class="btn-sm" onclick="goPage('ferramentas');openTool('flashcards')">Criar baralho</button></div>`;
-    return;
-  }
-  const pend = revisoes.reduce((s, r) => s + r.pendentes, 0);
-  box.innerHTML = `<div class="review-sum">${pend ? `<b>${pend}</b> ${pend === 1 ? 'cartão para revisar hoje' : 'cartões para revisar hoje'}` : 'Tudo revisado por hoje.'}</div>` +
-    revisoes.slice(0, 5).map(r => `
-    <div class="review-row">
-      <div class="file-icon-big"><svg class="icon"><use href="#i-cards"/></svg></div>
-      <div class="review-info"><div class="file-name">${escapeHTML(r.nome)}</div><div class="file-meta">${r.total} ${r.total === 1 ? 'cartão' : 'cartões'} · ${r.pendentes ? r.pendentes + ' pendentes' : 'em dia'}</div></div>
-      <button class="${r.pendentes ? 'btn-add' : 'btn-sm'}" onclick="startStudy(${r.id})"><svg class="icon"><use href="#i-play"/></svg>${r.pendentes ? 'Revisar' : 'Estudar'}</button>
-    </div>`).join('');
-}
+// O painel "Revisões de hoje" é desenhado em dashboard.js (renderRevisoes).

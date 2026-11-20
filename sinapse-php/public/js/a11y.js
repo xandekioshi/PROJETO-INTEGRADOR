@@ -112,7 +112,7 @@ function speak(text, el) {
   u.onend = () => { if (el) el.classList.remove('a11y-speaking'); };
   speechSynthesis.speak(u);
 }
-const READABLE = 'button, a, label, input, select, textarea, [role="button"], [role="tab"], h1, h2, h3, p, li, .stat-card, .meta-item, .book-card, .file-card, .activity-item, .event-chip, .tool-card, .lp-feature, .page-sub, .lp-eyebrow, .section-title';
+const READABLE = 'button, a, label, input, select, textarea, [role="button"], [role="tab"], h1, h2, h3, p, li, .stat-card, .meta-item, .file-card, .activity-item, .event-chip, .tool-card, .lp-feature, .page-sub, .lp-eyebrow, .section-title';
 function textOf(el) {
   if (el.matches('input, select, textarea')) {
     const label = el.id && document.querySelector(`label[for="${el.id}"]`);

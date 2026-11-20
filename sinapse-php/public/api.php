@@ -3,7 +3,7 @@ declare(strict_types=1);
 require __DIR__ . '/../app/bootstrap.php';
 $action = $_GET['action'] ?? 'session';
 $readActions = ['session', 'state', 'file_get', 'profile_stats', 'export', 'admin_overview', 'admin_users', 'admin_access', 'admin_contents', 'admin_audit'];
-$writeActions = ['register','login','logout','meta_add','meta_toggle','meta_delete','event_add','event_delete','file_save','file_delete','book_add','reading_toggle','card_review','profile_update','avatar_set','password_change','account_delete','admin_user_update','admin_user_password','admin_user_delete','admin_file_delete'];
+$writeActions = ['register','login','logout','meta_add','meta_toggle','meta_delete','event_add','event_delete','file_save','file_delete','card_review','profile_update','avatar_set','password_change','account_delete','admin_user_update','admin_user_password','admin_user_delete','admin_file_delete'];
 try {
     if (!in_array($action, array_merge($readActions, $writeActions), true)) fail('Ação desconhecida.', 404);
     $read = in_array($action, $readActions, true);
@@ -146,7 +146,6 @@ try {
             'metas'=>rows("SELECT m.nome,COALESCE(d.nome,'Geral') AS disciplina,p.nome AS prioridade,m.prazo,m.concluida,m.concluida_em,m.criado_em FROM meta m LEFT JOIN disciplina d ON d.id=m.disciplina_id JOIN prioridade p ON p.id=m.prioridade_id WHERE m.usuario_id=? ORDER BY m.id",[$uid]),
             'eventos'=>rows('SELECT e.titulo,e.data,e.hora,t.nome AS tipo FROM evento e JOIN tipo_evento t ON t.id=e.tipo_evento_id WHERE e.usuario_id=? ORDER BY e.data,e.hora',[$uid]),
             'arquivos'=>$files,
-            'lista_de_leitura'=>rows('SELECT l.titulo,l.autor FROM lista_leitura r JOIN livro l ON l.id=r.livro_id WHERE r.usuario_id=? ORDER BY l.titulo',[$uid]),
             'atividades'=>rows('SELECT a.descricao,t.codigo AS tipo,a.criado_em FROM atividade a JOIN tipo_atividade t ON t.id=a.tipo_atividade_id WHERE a.usuario_id=? ORDER BY a.criado_em',[$uid]),
         ]);
     }
@@ -180,18 +179,6 @@ try {
             if (!query('DELETE FROM arquivo WHERE id=? AND usuario_id=?',[integer($data['id'] ?? null),$uid])->rowCount()) fail('Arquivo não encontrado.',404); break;
         case 'file_save':
             require __DIR__.'/../app/save_file.php'; break;
-        case 'book_add':
-            $titulo=textField($data,'titulo',200); $autor=textField($data,'autor',200);
-            $area=one('SELECT id FROM area_conhecimento WHERE nome=?',[textField($data,'area',60)]);
-            if (!$area) fail('Área inválida.');
-            $book=(int)one('INSERT INTO livro (area_id,titulo,autor) VALUES (?,?,?) RETURNING id',[(int)$area['id'],$titulo,$autor])['id'];
-            $tags=textField($data,'tags',600,false);
-            foreach (array_unique(array_filter(array_map('trim',explode(',',$tags)))) as $tag) {
-                $tag=textField(['tag'=>$tag],'tag',60);
-                $tid=(int)one('INSERT INTO tag (nome) VALUES (?) ON CONFLICT (lower(nome)) DO UPDATE SET nome=tag.nome RETURNING id',[$tag])['id'];
-                query('INSERT INTO livro_tag (livro_id,tag_id) VALUES (?,?)',[$book,$tid]);
-            }
-            activity($uid,5,'Adicionou livro: '.$titulo); break;
         case 'card_review':
             // Repetição espaçada (caixas de Leitner): errei volta para a caixa 1; acertei sobe uma caixa.
             $card=one('SELECT f.id,f.caixa,a.nome FROM flashcard f JOIN arquivo a ON a.id=f.baralho_id WHERE f.id=? AND a.usuario_id=? FOR UPDATE OF f',[integer($data['id'] ?? null),$uid]);
@@ -293,11 +280,6 @@ try {
             adminLog($uid,'excluiu_arquivo',$f['nome'],'Dono: '.$f['dono'].' <'.$f['email'].'>');
             db()->commit();
             reply(['ok'=>true]);
-        case 'reading_toggle':
-            $bid=integer($data['id'] ?? null);
-            if (!one('SELECT id FROM livro WHERE id=?',[$bid])) fail('Livro não encontrado.',404);
-            if (!query('DELETE FROM lista_leitura WHERE usuario_id=? AND livro_id=?',[$uid,$bid])->rowCount()) query('INSERT INTO lista_leitura (usuario_id,livro_id) VALUES (?,?)',[$uid,$bid]);
-            break;
     }
     db()->commit();
     reply(state($uid));

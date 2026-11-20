@@ -14,12 +14,10 @@ Este pacote mantém o HTML e o CSS do projeto original e conecta as telas ao SQL
 | Planilha | Quantidade de linhas/colunas e valores das células | `planilha`, `planilha_celula` |
 | Apresentação | Slides na ordem de edição | `apresentacao`, `slide` |
 | Mapa mental | Nós, posição, cor e relação com o nó pai | `mapa_mental`, `mapa_no` |
-| Biblioteca | Catálogo compartilhado, áreas, tags e lista pessoal | `livro`, `area_conhecimento`, `tag`, `livro_tag`, `lista_leitura` |
 | Dashboard | Resumo, progresso e histórico | As três views do SQL e `atividade` |
 
-As metas, os eventos, os arquivos e a lista de leitura pertencem à conta conectada. O catálogo de livros e os cursos são compartilhados, conforme o modelo do SQL. Qualquer usuário conectado pode cadastrar um livro no catálogo nesta versão didática.
+As metas, os eventos e os arquivos pertencem à conta conectada. Os cursos são compartilhados, conforme o modelo do SQL.
 
-A biblioteca começa vazia. Você pode cadastrar livros pela própria interface. São registros de título, autor, área e tags; não há upload de PDF nem conteúdo digital de livros neste banco.
 
 ## 2. Requisitos
 
@@ -181,9 +179,8 @@ Na aba **Cadastrar**, crie sua primeira conta. Use senha de pelo menos seis cara
 3. Adicione um evento no cronograma. Clique em um evento para excluí-lo após confirmar.
 4. Crie um documento e escreva um texto. Salve, abra **Arquivos** e clique em **Abrir** para editar o mesmo registro.
 5. Teste também a planilha, a apresentação e o mapa mental. Ao adicionar linhas/colunas, os valores da planilha são preservados. No modo **Mover** do mapa, selecione um nó e clique em uma posição vazia.
-6. Cadastre um livro e clique em **+ Lista**. Confira **Minha lista de leitura**.
-7. Atualize a página: a sessão recupera os dados. Saia, entre novamente e confira a persistência.
-8. Crie uma segunda conta para conferir que metas, eventos, arquivos e lista pessoal estão separados. O catálogo de livros permanece compartilhado.
+6. Atualize a página: a sessão recupera os dados. Saia, entre novamente e confira a persistência.
+7. Crie uma segunda conta para conferir que metas, eventos e arquivos estão separados.
 
 As pastas padrão são criadas automaticamente pelo trigger de cadastro. Os novos arquivos são associados à pasta de seu tipo, e as contagens vêm da view `vw_pasta_contagem`.
 
@@ -277,7 +274,6 @@ Os arrays continuam sendo usados para renderização e filtros, mas agora são c
 | `event_add`, `event_delete` | POST | Criar e excluir evento |
 | `file_get` | GET | Abrir conteúdo de um arquivo pelo parâmetro `id` |
 | `file_save`, `file_delete` | POST | Criar/atualizar e excluir material |
-| `book_add`, `reading_toggle` | POST | Cadastrar livro e alternar lista pessoal |
 
 Para acrescentar um campo, altere o formulário, o objeto enviado pelo JS, a validação e o SQL do PHP, e a leitura em `state()` se ele precisar aparecer na tela. Para acrescentar uma ação, inclua-a na lista de ações permitidas e implemente seu tratamento.
 
@@ -294,7 +290,6 @@ SELECT arquivo_id, conteudo FROM sinapse.documento;
 SELECT * FROM sinapse.planilha_celula;
 SELECT * FROM sinapse.slide ORDER BY apresentacao_id, ordem;
 SELECT * FROM sinapse.mapa_no;
-SELECT * FROM sinapse.lista_leitura;
 SELECT * FROM sinapse.vw_dashboard_resumo;
 SELECT * FROM sinapse.vw_progresso_metas;
 SELECT * FROM sinapse.vw_pasta_contagem;

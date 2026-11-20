@@ -61,7 +61,7 @@ function launchApp(user) {
   goPage('dashboard');
 }
 function showAuth() {
-  currentUser=null; metas=[]; eventos=[]; arquivos=[]; books=[]; atividades=[]; pastas=[]; dashboardResumo=null; dashboardProgresso=[];
+  currentUser=null; metas=[]; eventos=[]; arquivos=[]; atividades=[]; pastas=[]; dashboardResumo=null; dashboardProgresso=[];
   currentWeekOffset=0; editingFileId=null; fcCards=[]; revisoes=[]; plData={};
   document.querySelectorAll('.modal-overlay').forEach(m=>m.classList.remove('open'));
   document.getElementById('auth-screen').style.display='block';

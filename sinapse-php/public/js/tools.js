@@ -60,3 +60,33 @@ Dicas:
 }
 
 // saveTool() em integration.js envia o conteúdo completo para a API PHP.
+
+// ---------- Página "Criar conteúdo": contagens e "Continuar de onde parou" ----------
+const TOOL_NOMES = { mapa: ['mapa salvo', 'mapas salvos'], documento: ['documento salvo', 'documentos salvos'], planilha: ['planilha salva', 'planilhas salvas'], flashcards: ['baralho salvo', 'baralhos salvos'] };
+function renderToolsPage() {
+  Object.keys(TOOL_NOMES).forEach(k => {
+    const el = document.getElementById('tc-' + k); if (!el) return;
+    const n = arquivos.filter(f => f.codigo === k).length;
+    el.textContent = n ? `${n} ${TOOL_NOMES[k][n === 1 ? 0 : 1]}` : 'Nenhum ainda';
+  });
+  const box = document.getElementById('tool-recent'); if (!box) return;
+  box.closest('.tool-recent').hidden = !arquivos.length;
+  box.innerHTML = '<ul class="recent-list">' + arquivos.slice(0, 4).map(f => `
+    <li><button type="button" class="recent-item" onclick="openFile(${f.id})">
+      <span class="fv-icon">${FILE_ICONS[f.codigo] || FILE_ICONS.documento}</span>
+      <span class="fv-text"><span class="fv-name">${escapeHTML(f.nome.replace(/\.[^.]+$/, ''))}</span><span class="fv-meta">atualizado em ${escapeHTML(f.data)}</span></span>
+      <svg class="icon recent-go" aria-hidden="true"><use href="#i-arrow"/></svg>
+    </button></li>`).join('') + '</ul>';
+}
+
+// Células da prévia da planilha (desenhadas uma vez; a animação é CSS).
+(function () {
+  const g = document.querySelector('.pv-sheet .pv-cells'); if (!g) return;
+  let html = '';
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) {
+    const x = 34 + c * 34, y = 14 + r * 21;
+    const cls = r === 0 ? 'pv-cell head' : c === 3 ? 'pv-cell total' : 'pv-cell';
+    html += `<rect class="${cls}" style="--d:${r * 4 + c}" x="${x}" y="${y}" width="32" height="19" rx="3"/>`;
+  }
+  g.innerHTML = html;
+})();

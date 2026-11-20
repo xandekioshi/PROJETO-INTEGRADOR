@@ -150,17 +150,11 @@ function boolValue(mixed $v): bool { return $v === true || $v === 't' || $v === 
 function state(int $uid): array {
     $metas = rows("SELECT m.id,m.nome,COALESCE(d.nome,'Geral') AS disciplina,m.prazo,p.nome AS prioridade,m.concluida AS done FROM meta m LEFT JOIN disciplina d ON d.id=m.disciplina_id JOIN prioridade p ON p.id=m.prioridade_id WHERE m.usuario_id=? ORDER BY m.id DESC", [$uid]);
     foreach ($metas as &$m) { $m['id']=(int)$m['id']; $m['done']=boolValue($m['done']); } unset($m);
-    $books = rows('SELECT l.id,l.titulo,l.autor,l.icone AS icon,a.nome AS area,EXISTS(SELECT 1 FROM lista_leitura r WHERE r.livro_id=l.id AND r.usuario_id=?) AS na_lista FROM livro l JOIN area_conhecimento a ON a.id=l.area_id ORDER BY l.id DESC', [$uid]);
-    $tags = rows('SELECT lt.livro_id,t.nome FROM livro_tag lt JOIN tag t ON t.id=lt.tag_id');
-    $byBook = [];
-    foreach ($tags as $t) $byBook[$t['livro_id']][]=$t['nome'];
-    foreach ($books as &$b) { $b['id']=(int)$b['id']; $b['na_lista']=boolValue($b['na_lista']); $b['tags']=$byBook[$b['id']] ?? []; } unset($b);
     return [
         'user' => userData($uid), 'csrf' => $_SESSION['csrf'], 'metas' => $metas,
         'eventos' => rows('SELECT e.id,e.titulo,e.data,to_char(e.hora,\'HH24:MI\') AS hora,t.cor AS tipo FROM evento e JOIN tipo_evento t ON t.id=e.tipo_evento_id WHERE e.usuario_id=? ORDER BY e.data,e.hora', [$uid]),
         'arquivos' => rows('SELECT a.id,a.nome,a.pasta_id,t.codigo,t.icone AS tipo,a.tamanho_bytes,a.atualizado_em FROM arquivo a JOIN tipo_arquivo t ON t.id=a.tipo_arquivo_id WHERE a.usuario_id=? ORDER BY a.atualizado_em DESC,a.id DESC', [$uid]),
         'pastas' => rows('SELECT * FROM vw_pasta_contagem WHERE usuario_id=? ORDER BY pasta_id', [$uid]),
-        'books' => $books,
         'atividades' => rows('SELECT a.descricao AS texto,t.cor,EXTRACT(EPOCH FROM a.criado_em)*1000 AS ts FROM atividade a JOIN tipo_atividade t ON t.id=a.tipo_atividade_id WHERE a.usuario_id=? ORDER BY a.criado_em DESC,a.id DESC LIMIT 20', [$uid]),
         'resumo' => one('SELECT * FROM vw_dashboard_resumo WHERE usuario_id=?', [$uid]),
         'progresso' => rows('SELECT * FROM vw_progresso_metas WHERE usuario_id=? ORDER BY disciplina', [$uid]),

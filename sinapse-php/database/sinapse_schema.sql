@@ -1,7 +1,7 @@
 -- Active: 1791565324654@@127.0.0.1@5432@sinapse@sinapse
 -- ============================================================
 -- Sinapse — Script de criação do banco (PostgreSQL 15+)
--- 24 tabelas · 3 views · 3 triggers · dados iniciais de domínio
+-- 19 tabelas · 3 views · 3 triggers · dados iniciais de domínio
 --
 -- Uso:
 --   createdb sinapse
@@ -41,10 +41,6 @@ CREATE TABLE tipo_arquivo (
     icone     varchar(10) NOT NULL
 );
 
-CREATE TABLE area_conhecimento (
-    id    smallint    PRIMARY KEY,
-    nome  varchar(60) NOT NULL UNIQUE        -- matematica, computacao, fisica, linguagens
-);
 
 CREATE TABLE tipo_atividade (
     id      smallint    PRIMARY KEY,
@@ -245,46 +241,7 @@ CREATE TABLE slide (
 
 
 -- ============================================================
--- 6. BIBLIOTECA
--- ============================================================
-
-CREATE TABLE livro (
-    id        integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    area_id   smallint     NOT NULL REFERENCES area_conhecimento(id),
-    titulo    varchar(200) NOT NULL,
-    autor     varchar(200) NOT NULL,
-    icone     varchar(10)  NOT NULL DEFAULT '📘',
-    CONSTRAINT livro_titulo_autor_uk UNIQUE (titulo, autor)
-);
-CREATE INDEX livro_area_idx ON livro (area_id);
--- busca por título/autor (usada na barra de pesquisa)
-CREATE INDEX livro_busca_idx ON livro
-    USING gin (to_tsvector('portuguese', titulo || ' ' || autor));
-
-CREATE TABLE tag (
-    id    integer GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    nome  varchar(60) NOT NULL
-);
-CREATE UNIQUE INDEX tag_nome_uk ON tag (lower(nome));
-
-CREATE TABLE livro_tag (
-    livro_id  integer NOT NULL REFERENCES livro(id) ON DELETE CASCADE,
-    tag_id    integer NOT NULL REFERENCES tag(id)   ON DELETE CASCADE,
-    PRIMARY KEY (livro_id, tag_id)
-);
-CREATE INDEX livro_tag_tag_idx ON livro_tag (tag_id);
-
-CREATE TABLE lista_leitura (
-    usuario_id     integer     NOT NULL REFERENCES usuario(id) ON DELETE CASCADE,
-    livro_id       integer     NOT NULL REFERENCES livro(id)   ON DELETE CASCADE,
-    adicionado_em  timestamptz NOT NULL DEFAULT now(),
-    PRIMARY KEY (usuario_id, livro_id)
-);
-CREATE INDEX lista_leitura_livro_idx ON lista_leitura (livro_id);
-
-
--- ============================================================
--- 7. ATIVIDADE RECENTE (dashboard)
+-- 6. ATIVIDADE RECENTE (dashboard)
 -- ============================================================
 
 CREATE TABLE atividade (
@@ -298,8 +255,8 @@ CREATE INDEX atividade_usuario_recente_idx ON atividade (usuario_id, criado_em D
 
 
 -- ============================================================
--- 8. DADOS INICIAIS DAS TABELAS DE DOMÍNIO
---    (a biblioteca e os demais dados do usuário começam VAZIOS)
+-- 7. DADOS INICIAIS DAS TABELAS DE DOMÍNIO
+--    (os dados do usuário começam VAZIOS)
 -- ============================================================
 
 INSERT INTO prioridade (id, nome) VALUES
@@ -319,25 +276,19 @@ INSERT INTO tipo_arquivo (id, codigo, nome, extensao, icone) VALUES
     (3, 'documento',    'Documento',    '.doc',  '📝'),
     (4, 'apresentacao', 'Apresentação', '.pptx', '🖼️');
 
-INSERT INTO area_conhecimento (id, nome) VALUES
-    (1, 'matematica'),
-    (2, 'computacao'),
-    (3, 'fisica'),
-    (4, 'linguagens');
 
 INSERT INTO tipo_atividade (id, codigo, cor) VALUES
     (1, 'meta_criada',      'accent2'),
     (2, 'meta_concluida',   'accent3'),
     (3, 'evento_criado',    'accent4'),
-    (4, 'arquivo_salvo',    'accent'),
-    (5, 'livro_adicionado', 'text3');
+    (4, 'arquivo_salvo',    'accent');
 
 
 -- ============================================================
--- 9. TRIGGERS
+-- 8. TRIGGERS
 -- ============================================================
 
--- 9.1 meta: preenche/limpa concluida_em automaticamente
+-- 8.1 meta: preenche/limpa concluida_em automaticamente
 CREATE FUNCTION trg_meta_conclusao() RETURNS trigger AS $$
 BEGIN
     IF NEW.concluida AND (TG_OP = 'INSERT' OR NOT OLD.concluida) THEN
@@ -353,7 +304,7 @@ CREATE TRIGGER meta_conclusao
     BEFORE INSERT OR UPDATE OF concluida ON meta
     FOR EACH ROW EXECUTE FUNCTION trg_meta_conclusao();
 
--- 9.2 arquivo: mantém atualizado_em
+-- 8.2 arquivo: mantém atualizado_em
 CREATE FUNCTION trg_arquivo_atualizado() RETURNS trigger AS $$
 BEGIN
     NEW.atualizado_em := now();
@@ -365,7 +316,7 @@ CREATE TRIGGER arquivo_atualizado
     BEFORE UPDATE ON arquivo
     FOR EACH ROW EXECUTE FUNCTION trg_arquivo_atualizado();
 
--- 9.3 usuario: cria as pastas padrão da página "Arquivos" no cadastro
+-- 8.3 usuario: cria as pastas padrão da página "Arquivos" no cadastro
 CREATE FUNCTION trg_usuario_pastas_padrao() RETURNS trigger AS $$
 BEGIN
     INSERT INTO pasta (usuario_id, nome) VALUES
@@ -383,7 +334,7 @@ CREATE TRIGGER usuario_pastas_padrao
 
 
 -- ============================================================
--- 10. VIEWS (alimentam o Dashboard e a página Arquivos)
+-- 9. VIEWS (alimentam o Dashboard e a página Arquivos)
 -- ============================================================
 
 -- Os 4 cards do dashboard (um registro por usuário)
@@ -396,8 +347,7 @@ SELECT
     (SELECT count(*) FROM evento e
       WHERE e.usuario_id = u.id
         AND e.data >= date_trunc('week', current_date)::date
-        AND e.data <  date_trunc('week', current_date)::date + 7)                 AS eventos_semana,
-    (SELECT count(*) FROM livro)                                                  AS livros_biblioteca
+        AND e.data <  date_trunc('week', current_date)::date + 7)                 AS eventos_semana
 FROM usuario u;
 
 -- Barras de "Progresso das Metas": % concluído por disciplina

@@ -34,6 +34,7 @@ updateUserUI = function () {
   admOriginalUpdateUserUI();
   const isAdmin = currentUser?.papel === 'admin';
   document.getElementById('nav-admin').hidden = !isAdmin;
+  document.getElementById('nav-admin-group').hidden = !isAdmin;
   const role = document.querySelector('.user-chip .user-role');
   if (role) role.textContent = isAdmin ? 'Administrador' : 'Ver perfil';
 };
@@ -41,6 +42,7 @@ const admOriginalShowAuth = showAuth;
 showAuth = function () {
   admData = {}; admTabAtual = 'geral'; openFolderKey = null;
   document.getElementById('nav-admin').hidden = true;
+  document.getElementById('nav-admin-group').hidden = true;
   admOriginalShowAuth();
 };
 

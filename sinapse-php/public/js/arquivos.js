@@ -63,7 +63,8 @@ function renderFolders() {
   Object.keys(FOLDER_INFO).forEach(key => {
     const count = arquivos.filter(f => f.codigo === key).length;
     document.getElementById('folder-' + key).textContent = count + (count === 1 ? ' item' : ' itens');
-    const row = document.querySelector(`.folder-row[data-folder="${key}"]`);
+    const row = document.querySelector(`.folder-card[data-folder="${key}"]`);
+    row.dataset.n = Math.min(count, 3); // quantas folhas aparecem saindo da pasta
     const panel = document.getElementById('fv-' + key);
     const open = openFolderKey === key;
     row.classList.toggle('open', open);
@@ -74,6 +75,7 @@ function renderFolders() {
     if (!panel.firstChild) {
       const sort = folderSort[key] || 'recentes';
       panel.innerHTML = `
+        <div class="fv-head"><h3 class="fv-title">${FOLDER_INFO[key].nome}</h3><button type="button" class="btn-sm btn-icon" onclick="toggleFolder('${key}')" aria-label="Fechar pasta"><svg class="icon"><use href="#i-x"/></svg></button></div>
         <div class="fv-toolbar">
           <label class="sr-only" for="fv-q-${key}">Buscar em ${FOLDER_INFO[key].nome}</label>
           <input id="fv-q-${key}" class="search-input fv-search" type="search" placeholder="Buscar em ${FOLDER_INFO[key].nome.toLowerCase()}…" value="${escapeHTML(folderQuery[key] || '')}" oninput="folderQuery['${key}']=this.value;renderFolderList('${key}')">

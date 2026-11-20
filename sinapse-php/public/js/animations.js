@@ -1,7 +1,7 @@
 /* animations.js
  * Carregar POR ÚLTIMO (depois de main.js).
  * Não substitui nenhuma função sua: apenas "embrulha" as existentes
- * (goPage, semanaNav, filterMetas, filterBib, buscarLivros) e observa listas.
+ * (goPage, semanaNav, filterMetas) e observa listas.
  * Se uma função não existir, ela é ignorada sem erro.
  */
 (function () {
@@ -13,10 +13,10 @@
 
   /* Itens que entram em cascata quando uma página é aberta */
   const PAGE_ITEMS =
-    '.stat-card, .tool-card, .meta-item, .book-card, .file-card, .folder-row, .day-col, .page > .card, .grid-2 > .card';
+    '.stat-card, .tool-card, .meta-item, .file-card, .folder-row, .day-col, .page > .card, .grid-2 > .card';
 
   /* Listas preenchidas via JS que devem animar quando recebem itens */
-  const LISTS = ['metas-list', 'books-list', 'files-grid', 'week-grid', 'dash-activity', 'dash-progress'];
+  const LISTS = ['metas-list', 'files-grid', 'week-grid'];
 
   /* Entrada em cascata (fade + subida leve) */
   function staggerIn(els, opts) {
@@ -96,8 +96,6 @@
 
     /* 3. Filtros e busca fazem a lista "respirar" */
     wrap('filterMetas', () => swap(byId('metas-list')));
-    wrap('filterBib', () => swap(byId('books-list')));
-    wrap('buscarLivros', () => swap(byId('books-list')));
 
     /* 4. Listas: anima itens novos (primeira carga ou item adicionado).
           Re-renderizações completas (ex.: marcar meta como concluída) não animam. */

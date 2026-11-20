@@ -13,11 +13,10 @@ function getTodayPlus(d) {
   return toISODate(dt);
 }
 
-// Começa tudo vazio: o usuário ainda não tem metas, eventos, arquivos ou livros.
+// Começa tudo vazio: o usuário ainda não tem metas, eventos, arquivos ou flashcards.
 let metas = [];
 let eventos = [];
 let arquivos = [];
-let books = [];
 let atividades = []; // { texto, cor, ts }
 
 let currentWeekOffset = 0;
