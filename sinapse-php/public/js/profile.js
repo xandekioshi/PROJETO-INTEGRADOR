@@ -165,7 +165,7 @@ async function exportData() {
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `estudaflow-meus-dados-${getTodayPlus(0)}.json`;
+    a.download = `sinapse-meus-dados-${getTodayPlus(0)}.json`;
     document.body.appendChild(a); a.click(); a.remove();
     setTimeout(() => URL.revokeObjectURL(a.href), 2000);
     showToast('Arquivo com seus dados baixado.');

@@ -1,21 +1,21 @@
--- Active: 1791565324654@@127.0.0.1@5432@estudaflow@estudaflow
+-- Active: 1791565324654@@127.0.0.1@5432@sinapse@sinapse
 -- ============================================================
--- EstudaFlow — Script de criação do banco (PostgreSQL 15+)
+-- Sinapse — Script de criação do banco (PostgreSQL 15+)
 -- 24 tabelas · 3 views · 3 triggers · dados iniciais de domínio
 --
 -- Uso:
---   createdb estudaflow
---   psql -d estudaflow -f estudaflow_schema.sql
+--   createdb sinapse
+--   psql -d sinapse -f sinapse_schema.sql
 --
--- O script é re-executável: ele apaga e recria o schema "estudaflow".
+-- O script é re-executável: ele apaga e recria o schema "sinapse".
 -- ATENÇÃO: isso remove todos os dados existentes nesse schema.
 -- ============================================================
 
 BEGIN;
 
-DROP SCHEMA IF EXISTS estudaflow CASCADE;
-CREATE SCHEMA estudaflow;
-SET search_path TO estudaflow;
+DROP SCHEMA IF EXISTS sinapse CASCADE;
+CREATE SCHEMA sinapse;
+SET search_path TO sinapse;
 
 
 -- ============================================================

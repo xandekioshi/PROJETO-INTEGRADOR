@@ -3,7 +3,7 @@ declare(strict_types=1);
 ini_set('display_errors', '0');
 ini_set('log_errors', '1');
 ini_set('session.use_strict_mode', '1');
-session_name('estudaflow_session');
+session_name('sinapse_session');
 session_set_cookie_params([
     'httponly' => true,
     'secure' => !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off',
@@ -47,7 +47,7 @@ function db(): PDO {
         PDO::ATTR_EMULATE_PREPARES => false,
     ]);
     $GLOBALS['ef_pdo'] = $pdo;
-    $pdo->exec('SET search_path TO estudaflow, public');
+    $pdo->exec('SET search_path TO sinapse, public');
     query("SELECT set_config('TimeZone', ?, false)", [$c['timezone'] ?? 'America/Cuiaba']);
     return $pdo;
 }

@@ -1,4 +1,4 @@
-# EstudaFlow: integração com PHP e PostgreSQL
+# Sinapse: integração com PHP e PostgreSQL
 
 Este pacote mantém o HTML e o CSS do projeto original e conecta as telas ao SQL fornecido. O navegador chama uma API PHP com `fetch`; o PHP valida os dados, identifica o usuário pela sessão e executa consultas no PostgreSQL com PDO.
 
@@ -32,13 +32,13 @@ Não é necessário Node.js, Composer ou MySQL. O servidor embutido do PHP basta
 ## 3. Estrutura do projeto
 
 ```text
-estudaflow-php/
+sinapse-php/
     app/
         config.example.php
         bootstrap.php
         save_file.php
     database/
-        estudaflow_schema.sql
+        sinapse_schema.sql
     public/
         index.html
         api.php
@@ -100,25 +100,25 @@ Use o mesmo executável para iniciar o projeto. Se você usa XAMPP/Apache, confi
 ### Opção A: pgAdmin ou DBeaver
 
 1. Conecte-se ao PostgreSQL local, normalmente `localhost`, porta `5432`, usuário `postgres`, com a senha definida na instalação.
-2. Crie um banco chamado `estudaflow`.
+2. Crie um banco chamado `sinapse`.
 3. Abra uma conexão ou editor SQL apontando para **esse banco**.
-4. Abra `database/estudaflow_schema.sql` e execute o script completo.
-5. Confira o schema `estudaflow`, suas tabelas e views. No DBeaver, atualize a árvore de objetos se necessário.
+4. Abra `database/sinapse_schema.sql` e execute o script completo.
+5. Confira o schema `sinapse`, suas tabelas e views. No DBeaver, atualize a árvore de objetos se necessário.
 
 O banco e o schema têm o mesmo nome, mas são objetos diferentes: o banco contém o schema, e o schema organiza suas tabelas.
 
 ### Opção B: terminal
 
-Dentro da pasta `estudaflow-php`, execute:
+Dentro da pasta `sinapse-php`, execute:
 
 ```powershell
-createdb -h localhost -p 5432 -U postgres estudaflow
-psql -h localhost -p 5432 -U postgres -d estudaflow -v ON_ERROR_STOP=1 -f database/estudaflow_schema.sql
+createdb -h localhost -p 5432 -U postgres sinapse
+psql -h localhost -p 5432 -U postgres -d sinapse -v ON_ERROR_STOP=1 -f database/sinapse_schema.sql
 ```
 
 Se esses comandos não forem reconhecidos, use os executáveis na pasta `bin` da sua instalação do PostgreSQL ou a opção gráfica.
 
-**Atenção ao script fornecido:** ele começa com `DROP SCHEMA IF EXISTS estudaflow CASCADE`. Reexecutá-lo apaga os dados do schema e recria as tabelas. Importe uma vez na instalação; não execute novamente a cada uso do site.
+**Atenção ao script fornecido:** ele começa com `DROP SCHEMA IF EXISTS sinapse CASCADE`. Reexecutá-lo apaga os dados do schema e recria as tabelas. Importe uma vez na instalação; não execute novamente a cada uso do site.
 
 O SQL original está incluído sem alteração. A sintaxe de algumas chaves estrangeiras exige PostgreSQL 15 ou superior.
 
@@ -137,20 +137,20 @@ Edite `app/config.php`:
 return [
     'host' => '127.0.0.1',
     'port' => 5432,
-    'database' => 'estudaflow',
+    'database' => 'sinapse',
     'user' => 'postgres',
     'password' => 'sua_senha_do_postgresql',
     'timezone' => 'America/Cuiaba',
 ];
 ```
 
-Use a senha do usuário do PostgreSQL, não a senha que você pretende cadastrar no site. O PHP configura o `search_path` para encontrar as tabelas em `estudaflow` e o fuso horário usado nas datas e no dashboard.
+Use a senha do usuário do PostgreSQL, não a senha que você pretende cadastrar no site. O PHP configura o `search_path` para encontrar as tabelas em `sinapse` e o fuso horário usado nas datas e no dashboard.
 
 Se outra aplicação ou container publica o banco em uma porta diferente, ajuste `port`. Nesta forma de instalação, o PHP roda no computador e acessa a porta do PostgreSQL disponível nele.
 
 ## 7. Iniciar o site
 
-Abra o terminal na pasta `estudaflow-php` e execute:
+Abra o terminal na pasta `sinapse-php` e execute:
 
 ```powershell
 php -S localhost:8000 -t public
@@ -239,7 +239,7 @@ $pdo = new PDO(
         PDO::ATTR_EMULATE_PREPARES => false,
     ]
 );
-$pdo->exec('SET search_path TO estudaflow, public');
+$pdo->exec('SET search_path TO sinapse, public');
 ```
 
 `$c` é o array retornado por `app/config.php`. Essa conexão é reutilizada durante a mesma requisição.
@@ -283,21 +283,21 @@ Para acrescentar um campo, altere o formulário, o objeto enviado pelo JS, a val
 
 ## 10. Consultas para conferir os dados
 
-No editor SQL conectado ao banco `estudaflow`:
+No editor SQL conectado ao banco `sinapse`:
 
 ```sql
-SELECT id, nome, email, curso_id FROM estudaflow.usuario;
-SELECT id, usuario_id, nome, concluida, concluida_em FROM estudaflow.meta;
-SELECT id, usuario_id, titulo, data, hora FROM estudaflow.evento;
-SELECT id, usuario_id, nome, tamanho_bytes FROM estudaflow.arquivo;
-SELECT arquivo_id, conteudo FROM estudaflow.documento;
-SELECT * FROM estudaflow.planilha_celula;
-SELECT * FROM estudaflow.slide ORDER BY apresentacao_id, ordem;
-SELECT * FROM estudaflow.mapa_no;
-SELECT * FROM estudaflow.lista_leitura;
-SELECT * FROM estudaflow.vw_dashboard_resumo;
-SELECT * FROM estudaflow.vw_progresso_metas;
-SELECT * FROM estudaflow.vw_pasta_contagem;
+SELECT id, nome, email, curso_id FROM sinapse.usuario;
+SELECT id, usuario_id, nome, concluida, concluida_em FROM sinapse.meta;
+SELECT id, usuario_id, titulo, data, hora FROM sinapse.evento;
+SELECT id, usuario_id, nome, tamanho_bytes FROM sinapse.arquivo;
+SELECT arquivo_id, conteudo FROM sinapse.documento;
+SELECT * FROM sinapse.planilha_celula;
+SELECT * FROM sinapse.slide ORDER BY apresentacao_id, ordem;
+SELECT * FROM sinapse.mapa_no;
+SELECT * FROM sinapse.lista_leitura;
+SELECT * FROM sinapse.vw_dashboard_resumo;
+SELECT * FROM sinapse.vw_progresso_metas;
+SELECT * FROM sinapse.vw_pasta_contagem;
 ```
 
 ## 11. Problemas comuns
@@ -308,7 +308,7 @@ SELECT * FROM estudaflow.vw_pasta_contagem;
 | Falha de autenticação no PostgreSQL | Confira usuário e senha em `app/config.php`. |
 | Conexão recusada | Confira se o PostgreSQL está iniciado e a porta está correta. |
 | `database does not exist` | Crie o banco e confira seu nome na configuração. |
-| `relation ... does not exist` | Importe o script no banco correto; o schema esperado é `estudaflow`. |
+| `relation ... does not exist` | Importe o script no banco correto; o schema esperado é `sinapse`. |
 | Erro ao importar `ON DELETE SET NULL (...)` | Confira se o PostgreSQL é versão 15 ou superior. |
 | PHP exibe erro ao carregar a extensão | Confira `extension_dir`, a distribuição de PHP e as DLLs incluídas nela. |
 | Resposta inválida do servidor | Acesse pelo servidor PHP, não por `file://` ou Live Server; confira o terminal. |
@@ -324,7 +324,7 @@ As senhas usam `password_hash()` e o login usa `password_verify()`. Não são ar
 
 Esta é uma aplicação didática para execução local. A limitação de tentativas de login é por sessão; um sistema publicado exigiria controle persistente de tentativas e revisão de permissões, especialmente para administrar o catálogo compartilhado. Use HTTPS e um usuário de banco com permissões adequadas ao publicar. O servidor `php -S` é destinado a testes/desenvolvimento.
 
-Os materiais são conteúdo estruturado no PostgreSQL. As extensões `.doc`, `.xls`, `.pptx` e `.flow` seguem os nomes do projeto original; não são exportações compatíveis com Word, Excel ou PowerPoint. Você reabre e edita o conteúdo dentro do EstudaFlow. A planilha guarda texto e não calcula fórmulas. O tamanho exibido mede o JSON do conteúdo salvo.
+Os materiais são conteúdo estruturado no PostgreSQL. As extensões `.doc`, `.xls`, `.pptx` e `.flow` seguem os nomes do projeto original; não são exportações compatíveis com Word, Excel ou PowerPoint. Você reabre e edita o conteúdo dentro do Sinapse. A planilha guarda texto e não calcula fórmulas. O tamanho exibido mede o JSON do conteúdo salvo.
 
 Limites adotados: requisição de até 2 MB, planilha de até 500 linhas e 8 colunas, apresentação com até 200 slides e mapa com até 500 nós. O front usa as tabelas de domínio para validar os tipos existentes, mas seus controles visuais continuam oferecendo as opções do SQL original. A estrutura de pastas aninhadas existe no banco; esta interface utiliza apenas as quatro pastas padrão.
 

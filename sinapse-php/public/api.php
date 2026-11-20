@@ -200,12 +200,12 @@ try {
 } catch (PDOException $e) {
     rollbackIfOpen();
     // Conexões são liberadas e transações pendentes são revertidas ao encerrar a requisição.
-    error_log('EstudaFlow DB: '.$e->getMessage());
+    error_log('Sinapse DB: '.$e->getMessage());
     $code=(string)$e->getCode();
     if ($code==='23505') fail('Este e-mail ou registro já existe.',409);
     if (in_array($code,['23503','23514','22001','22007','22008'],true)) fail('Dados inválidos para o banco. Confira os campos.',422);
     fail('Não foi possível acessar o banco. Confira app/config.php, o serviço PostgreSQL e a importação do SQL. Veja também o terminal do PHP.',503);
 } catch (Throwable $e) {
-    error_log('EstudaFlow: '.$e->getMessage());
+    error_log('Sinapse: '.$e->getMessage());
     fail('Falha no servidor. Consulte o terminal do PHP.',500);
 }

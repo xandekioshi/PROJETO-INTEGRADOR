@@ -2,14 +2,14 @@
 -- Migração 001 — Substitui "Apresentação" por "Flashcards"
 -- (repetição espaçada, sistema de caixas de Leitner).
 --
--- Execute UMA vez, depois de estudaflow_schema.sql:
---   psql -h localhost -U postgres -d estudaflow -v ON_ERROR_STOP=1 -f database/migrations/001_flashcards.sql
+-- Execute UMA vez, depois de sinapse_schema.sql:
+--   psql -h localhost -U postgres -d sinapse -v ON_ERROR_STOP=1 -f database/migrations/001_flashcards.sql
 -- É seguro reexecutar: os passos verificam o que já existe.
 -- Apresentações existentes são convertidas em baralhos
 -- (título do slide -> frente, conteúdo -> verso).
 -- ============================================================
 BEGIN;
-SET search_path TO estudaflow, public;
+SET search_path TO sinapse, public;
 
 -- 1. Novo tipo de arquivo
 INSERT INTO tipo_arquivo (id, codigo, nome, extensao, icone)

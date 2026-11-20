@@ -5,7 +5,7 @@
 -- Execute depois da 001. É seguro reexecutar.
 -- ============================================================
 BEGIN;
-SET search_path TO estudaflow, public;
+SET search_path TO sinapse, public;
 
 ALTER TABLE usuario ADD COLUMN IF NOT EXISTS foto text;
 ALTER TABLE usuario ADD COLUMN IF NOT EXISTS atualizado_em timestamptz NOT NULL DEFAULT now();
