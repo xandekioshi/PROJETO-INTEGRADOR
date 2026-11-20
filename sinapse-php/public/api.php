@@ -2,8 +2,8 @@
 declare(strict_types=1);
 require __DIR__ . '/../app/bootstrap.php';
 $action = $_GET['action'] ?? 'session';
-$readActions = ['session', 'state', 'file_get', 'profile_stats', 'export'];
-$writeActions = ['register','login','logout','meta_add','meta_toggle','meta_delete','event_add','event_delete','file_save','file_delete','book_add','reading_toggle','card_review','profile_update','avatar_set','password_change','account_delete'];
+$readActions = ['session', 'state', 'file_get', 'profile_stats', 'export', 'admin_overview', 'admin_users', 'admin_access', 'admin_contents', 'admin_audit'];
+$writeActions = ['register','login','logout','meta_add','meta_toggle','meta_delete','event_add','event_delete','file_save','file_delete','book_add','reading_toggle','card_review','profile_update','avatar_set','password_change','account_delete','admin_user_update','admin_user_password','admin_user_delete','admin_file_delete'];
 try {
     if (!in_array($action, array_merge($readActions, $writeActions), true)) fail('Ação desconhecida.', 404);
     $read = in_array($action, $readActions, true);
@@ -18,7 +18,10 @@ try {
     }
     if ($action === 'session') {
         $user = empty($_SESSION['uid']) ? null : userData((int)$_SESSION['uid']);
+        if ($user && !$user['ativo']) $user = null;
         if (!$user) unset($_SESSION['uid']);
+        // Quem volta ao site com a sessão aberta conta como um acesso por dia.
+        elseif (($_SESSION['acesso_dia'] ?? '') !== date('Y-m-d')) logAccess((int)$user['id'], $user['email'], 'retorno');
         reply(['user'=>$user ?: null, 'csrf'=>$_SESSION['csrf']]);
     }
     if ($action === 'login' || $action === 'register') {
@@ -27,11 +30,16 @@ try {
         if (!filter_var($email, FILTER_VALIDATE_EMAIL) || !is_string($pass) || strlen($pass)>72) fail('E-mail ou senha inválidos (senha: até 72 bytes).');
         if ($action === 'login') {
             if (($_SESSION['login_block_until'] ?? 0) > time()) fail('Muitas tentativas. Aguarde um minuto.', 429);
-            $user = one('SELECT id,senha_hash FROM usuario WHERE lower(email)=?', [$email]);
+            $user = one('SELECT id,senha_hash,ativo FROM usuario WHERE lower(email)=?', [$email]);
             if (!$user || !password_verify($pass,$user['senha_hash'])) {
+                logAccess($user ? (int)$user['id'] : null, $email, 'falha');
                 $_SESSION['login_attempts']=($_SESSION['login_attempts'] ?? 0)+1;
                 if ($_SESSION['login_attempts']>=5) { $_SESSION['login_block_until']=time()+60; $_SESSION['login_attempts']=0; }
                 fail('E-mail ou senha incorretos.',401);
+            }
+            if (!boolValue($user['ativo'])) {
+                logAccess((int)$user['id'], $email, 'bloqueada');
+                fail('Esta conta foi desativada por um administrador.',403);
             }
             $uid=(int)$user['id'];
             unset($_SESSION['login_attempts'],$_SESSION['login_block_until']);
@@ -47,16 +55,62 @@ try {
         session_regenerate_id(true);
         $_SESSION['uid']=$uid;
         $_SESSION['csrf']=bin2hex(random_bytes(32));
+        logAccess($uid, $email, $action === 'login' ? 'login' : 'cadastro');
         reply(state($uid));
     }
     $uid=ownerId();
+    // Todas as ações admin_* exigem o papel de administrador.
+    if (str_starts_with($action, 'admin_')) requireAdmin($uid);
     if ($action === 'logout') {
+        logAccess($uid, null, 'logout');
         $_SESSION=[];
         session_regenerate_id(true);
         $_SESSION['csrf']=bin2hex(random_bytes(32));
         reply(['csrf'=>$_SESSION['csrf']]);
     }
     if ($action === 'state') reply(state($uid));
+    // ---------- Administração (somente leitura) ----------
+    if ($action === 'admin_overview') {
+        $u=one("SELECT count(*) AS total,
+            count(*) FILTER (WHERE ativo) AS ativos,
+            count(*) FILTER (WHERE NOT ativo) AS desativados,
+            count(*) FILTER (WHERE papel='admin') AS admins,
+            count(*) FILTER (WHERE criado_em>=now()-interval '7 days') AS novos_7d,
+            count(*) FILTER (WHERE ultimo_acesso>=now()-interval '1 day') AS ativos_24h,
+            count(*) FILTER (WHERE ultimo_acesso>=now()-interval '7 days') AS ativos_7d
+            FROM usuario");
+        $outros=one("SELECT (SELECT count(*) FROM meta) AS metas,(SELECT count(*) FROM evento) AS eventos,(SELECT count(*) FROM flashcard) AS cartoes,(SELECT count(*) FROM acesso WHERE tipo IN ('falha','bloqueada') AND criado_em>=now()-interval '1 day') AS falhas_24h");
+        reply([
+            'usuarios'=>array_map('intval',$u),
+            'outros'=>array_map('intval',$outros),
+            'conteudos'=>array_map(fn($r)=>['codigo'=>$r['codigo'],'nome'=>$r['nome'],'qtd'=>(int)$r['qtd'],'bytes'=>(int)$r['bytes']], rows("SELECT t.codigo,t.nome,count(a.id) AS qtd,COALESCE(sum(a.tamanho_bytes),0) AS bytes FROM tipo_arquivo t LEFT JOIN arquivo a ON a.tipo_arquivo_id=t.id WHERE t.codigo IN ('mapa','documento','planilha','flashcards') GROUP BY t.id ORDER BY qtd DESC,t.id")),
+            'acessos'=>array_map(fn($r)=>['dia'=>$r['dia'],'entradas'=>(int)$r['entradas'],'usuarios'=>(int)$r['usuarios'],'falhas'=>(int)$r['falhas']], rows("SELECT to_char(d,'YYYY-MM-DD') AS dia,
+                count(a.id) FILTER (WHERE a.tipo IN ('login','retorno','cadastro')) AS entradas,
+                count(DISTINCT a.usuario_id) FILTER (WHERE a.tipo IN ('login','retorno','cadastro')) AS usuarios,
+                count(a.id) FILTER (WHERE a.tipo IN ('falha','bloqueada')) AS falhas
+                FROM generate_series(current_date-13,current_date,interval '1 day') d
+                LEFT JOIN acesso a ON a.criado_em::date=d::date GROUP BY d ORDER BY d")),
+            'top'=>rows("SELECT u.id,u.nome,u.email,count(a.id) AS arquivos FROM usuario u JOIN arquivo a ON a.usuario_id=u.id GROUP BY u.id ORDER BY arquivos DESC,u.nome LIMIT 5"),
+            'recentes'=>rows("SELECT id,nome,email,criado_em FROM usuario ORDER BY criado_em DESC,id DESC LIMIT 5"),
+        ]);
+    }
+    if ($action === 'admin_users') {
+        $list=rows("SELECT u.id,u.nome,u.email,COALESCE(c.nome,'') AS curso,u.papel,u.ativo,u.criado_em,u.ultimo_acesso,
+            (SELECT count(*) FROM arquivo a WHERE a.usuario_id=u.id) AS arquivos,
+            (SELECT count(*) FROM meta m WHERE m.usuario_id=u.id) AS metas
+            FROM usuario u LEFT JOIN curso c ON c.id=u.curso_id ORDER BY u.criado_em DESC,u.id DESC LIMIT 1000");
+        foreach ($list as &$r) { $r['id']=(int)$r['id']; $r['ativo']=boolValue($r['ativo']); $r['arquivos']=(int)$r['arquivos']; $r['metas']=(int)$r['metas']; } unset($r);
+        reply(['usuarios'=>$list,'eu'=>$uid]);
+    }
+    if ($action === 'admin_access') {
+        reply(['acessos'=>rows("SELECT a.id,a.tipo,COALESCE(u.email,a.email) AS email,u.nome,a.ip,a.navegador,a.criado_em FROM acesso a LEFT JOIN usuario u ON u.id=a.usuario_id ORDER BY a.criado_em DESC,a.id DESC LIMIT 300")]);
+    }
+    if ($action === 'admin_contents') {
+        reply(['arquivos'=>rows("SELECT a.id,a.nome,t.codigo,a.tamanho_bytes,a.criado_em,a.atualizado_em,u.nome AS dono,u.email FROM arquivo a JOIN tipo_arquivo t ON t.id=a.tipo_arquivo_id JOIN usuario u ON u.id=a.usuario_id ORDER BY a.atualizado_em DESC,a.id DESC LIMIT 500")]);
+    }
+    if ($action === 'admin_audit') {
+        reply(['registros'=>rows('SELECT id,admin_nome,acao,alvo,detalhes,criado_em FROM admin_log ORDER BY criado_em DESC,id DESC LIMIT 200')]);
+    }
     if ($action === 'file_get') {
         $id=integer($_GET['id'] ?? null);
         $file=one('SELECT a.id,a.nome,t.codigo FROM arquivo a JOIN tipo_arquivo t ON t.id=a.tipo_arquivo_id WHERE a.id=? AND a.usuario_id=?',[$id,$uid]);
@@ -180,6 +234,8 @@ try {
         case 'account_delete':
             if (($data['confirmacao'] ?? '') !== 'EXCLUIR') fail('Digite EXCLUIR para confirmar.');
             verifyPassword($uid,$data['senha'] ?? null);
+            if (one("SELECT 1 FROM usuario WHERE id=? AND papel='admin'",[$uid]) && !one("SELECT 1 FROM usuario WHERE papel='admin' AND ativo AND id<>?",[$uid]))
+                fail('Você é o único administrador. Promova outra conta antes de excluir a sua.');
             // Metas, eventos, arquivos, pastas e atividades são apagados em cascata pelo banco.
             query('DELETE FROM usuario WHERE id=?',[$uid]);
             db()->commit();
@@ -187,6 +243,56 @@ try {
             session_regenerate_id(true);
             $_SESSION['csrf']=bin2hex(random_bytes(32));
             reply(['ok'=>true,'csrf'=>$_SESSION['csrf']]);
+        // ---------- Administração (escrita; cada ação fica registrada em admin_log) ----------
+        case 'admin_user_update':
+            $id=integer($data['id'] ?? null);
+            if ($id===$uid) fail('Você não pode alterar o seu próprio acesso. Peça a outro administrador.');
+            $alvo=one('SELECT nome,email FROM usuario WHERE id=? FOR UPDATE',[$id]);
+            if (!$alvo) fail('Usuário não encontrado.',404);
+            $quem=$alvo['nome'].' <'.$alvo['email'].'>';
+            if (array_key_exists('papel',$data)) {
+                if (!in_array($data['papel'],['estudante','admin'],true)) fail('Papel inválido.');
+                query('UPDATE usuario SET papel=? WHERE id=?',[$data['papel'],$id]);
+                adminLog($uid,$data['papel']==='admin'?'promoveu_admin':'removeu_admin',$quem);
+            }
+            if (array_key_exists('ativo',$data)) {
+                if (!is_bool($data['ativo'])) fail('Valor inválido.');
+                query('UPDATE usuario SET ativo=? WHERE id=?',[$data['ativo'],$id]);
+                adminLog($uid,$data['ativo']?'reativou_conta':'desativou_conta',$quem);
+            }
+            db()->commit();
+            reply(['ok'=>true]);
+        case 'admin_user_password':
+            $id=integer($data['id'] ?? null);
+            if ($id===$uid) fail('Para trocar a sua senha, use o seu perfil.');
+            $alvo=one('SELECT nome,email FROM usuario WHERE id=?',[$id]);
+            if (!$alvo) fail('Usuário não encontrado.',404);
+            // Senha temporária legível (sem 0/O, 1/l/I), mostrada uma única vez ao administrador.
+            $chars='abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789'; $senha='';
+            for ($i=0;$i<10;$i++) $senha.=$chars[random_int(0,strlen($chars)-1)];
+            query('UPDATE usuario SET senha_hash=?,atualizado_em=now() WHERE id=?',[password_hash($senha,PASSWORD_DEFAULT),$id]);
+            adminLog($uid,'redefiniu_senha',$alvo['nome'].' <'.$alvo['email'].'>');
+            db()->commit();
+            reply(['senha'=>$senha,'nome'=>$alvo['nome'],'email'=>$alvo['email']]);
+        case 'admin_user_delete':
+            $id=integer($data['id'] ?? null);
+            if ($id===$uid) fail('Para excluir a sua conta, use o seu perfil.');
+            $alvo=one('SELECT nome,email FROM usuario WHERE id=?',[$id]);
+            if (!$alvo) fail('Usuário não encontrado.',404);
+            if (strtolower(trim((string)($data['confirmacao'] ?? '')))!==strtolower($alvo['email'])) fail('Digite o e-mail do usuário para confirmar.');
+            $n=one('SELECT count(*) AS n FROM arquivo WHERE usuario_id=?',[$id])['n'];
+            adminLog($uid,'excluiu_conta',$alvo['nome'].' <'.$alvo['email'].'>',$n.' arquivo(s) removido(s)');
+            query('DELETE FROM usuario WHERE id=?',[$id]);
+            db()->commit();
+            reply(['ok'=>true]);
+        case 'admin_file_delete':
+            $id=integer($data['id'] ?? null);
+            $f=one('SELECT a.nome,u.nome AS dono,u.email FROM arquivo a JOIN usuario u ON u.id=a.usuario_id WHERE a.id=?',[$id]);
+            if (!$f) fail('Arquivo não encontrado.',404);
+            query('DELETE FROM arquivo WHERE id=?',[$id]);
+            adminLog($uid,'excluiu_arquivo',$f['nome'],'Dono: '.$f['dono'].' <'.$f['email'].'>');
+            db()->commit();
+            reply(['ok'=>true]);
         case 'reading_toggle':
             $bid=integer($data['id'] ?? null);
             if (!one('SELECT id FROM livro WHERE id=?',[$bid])) fail('Livro não encontrado.',404);
