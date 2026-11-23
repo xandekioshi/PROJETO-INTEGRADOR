@@ -4,3 +4,12 @@
 # Configuração do banco com senha (modelo: sinapse-php/app/config.example.php)
 /sinapse-php/app/config.php
 /sinapse-php/app/config.php.bak
+/sinapse-php/app/config.testes.php
+
+# Dependências do Composer (recriadas com "composer install")
+/sinapse-php/vendor/
+
+# Pasta docs: no GitHub só vão os PDFs finais (documentação e relatório de testes unificado)
+/docs/*
+!/docs/Sinapse-Documentacao.pdf
+!/docs/Sinapse-Testes-Completo.pdf

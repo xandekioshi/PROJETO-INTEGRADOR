@@ -37,7 +37,8 @@ function fail(string $message, int $status = 422): never {
 function db(): PDO {
     static $pdo;
     if ($pdo) return $pdo;
-    $path = __DIR__ . '/config.php';
+    // SINAPSE_CONFIG permite rodar os testes contra outro banco (ex.: app/config.testes.php).
+    $path = getenv('SINAPSE_CONFIG') ?: __DIR__ . '/config.php';
     if (!is_file($path)) fail('Copie app/config.example.php para app/config.php e configure o banco.', 503);
     $c = require $path;
     date_default_timezone_set($c['timezone'] ?? 'America/Cuiaba');

@@ -1,0 +1,100 @@
+{
+    "executado_em": "2026-11-23 04:13:56",
+    "casos": [
+        [
+            "CT01",
+            true,
+            "200, pastas criadas: Mapas Mentais, Documentos, Planilhas, Flashcards"
+        ],
+        [
+            "CT02",
+            true,
+            "422 \"A senha precisa ter pelo menos 6 caracteres.\""
+        ],
+        [
+            "CT03",
+            true,
+            "409 \"Este e-mail ou registro já existe.\""
+        ],
+        [
+            "CT04",
+            true,
+            "200, usuário: teste.a.20261123041327@exemplo.com"
+        ],
+        [
+            "CT05",
+            true,
+            "401 \"E-mail ou senha incorretos.\""
+        ],
+        [
+            "CT06",
+            true,
+            "após sair, sessão: null"
+        ],
+        [
+            "CT07",
+            true,
+            "200, meta: Estudar banco de dados"
+        ],
+        [
+            "CT08",
+            true,
+            "422 \"Verifique o campo nome (máximo 200 caracteres).\""
+        ],
+        [
+            "CT09",
+            true,
+            "concluída: true, atividade: Concluiu meta: Estudar banco de dados"
+        ],
+        [
+            "CT10",
+            true,
+            "200, evento em 2026-12-03 19:00"
+        ],
+        [
+            "CT11",
+            true,
+            "arquivo: Baralho teste.cards, cartões ao reabrir: 3"
+        ],
+        [
+            "CT12",
+            true,
+            "documento ok, planilha ok, mapa ok"
+        ],
+        [
+            "CT13",
+            true,
+            "caixa 1 → 2, próxima em 3 dia(s)"
+        ],
+        [
+            "CT14",
+            true,
+            "caixa 2 → 1, próxima: 2026-11-23"
+        ],
+        [
+            "CT15",
+            true,
+            "422 \"A nova senha precisa ser diferente da atual.\""
+        ],
+        [
+            "CT16",
+            true,
+            "200, metas: 1, eventos: 1, arquivos: 4, contém senha_hash: não"
+        ],
+        [
+            "CT17",
+            true,
+            "exclusão: 200; login depois: 401 \"E-mail ou senha incorretos.\""
+        ],
+        [
+            "CT18",
+            true,
+            "usuário B abrindo arquivo de A: 404 \"Arquivo não encontrado.\""
+        ],
+        [
+            "CT19",
+            true,
+            "403 \"Acesso restrito a administradores.\""
+        ]
+    ]
+}

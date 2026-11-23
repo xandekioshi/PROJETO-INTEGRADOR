@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 require __DIR__ . '/../app/bootstrap.php';
+require __DIR__ . '/../app/leitner.php';
 $action = $_GET['action'] ?? 'session';
 $readActions = ['session', 'state', 'file_get', 'profile_stats', 'export', 'admin_overview', 'admin_users', 'admin_access', 'admin_contents', 'admin_audit'];
 $writeActions = ['register','login','logout','meta_add','meta_toggle','meta_delete','event_add','event_delete','file_save','file_delete','card_review','profile_update','avatar_set','password_change','account_delete','admin_user_update','admin_user_password','admin_user_delete','admin_file_delete'];
@@ -184,12 +185,9 @@ try {
             $card=one('SELECT f.id,f.caixa,a.nome FROM flashcard f JOIN arquivo a ON a.id=f.baralho_id WHERE f.id=? AND a.usuario_id=? FOR UPDATE OF f',[integer($data['id'] ?? null),$uid]);
             if (!$card) fail('Cartão não encontrado.',404);
             $resp=textField($data,'resposta',10);
-            $intervalos=[1=>1,2=>3,3=>7,4=>14,5=>30];
-            $caixa=(int)$card['caixa'];
-            if ($resp==='errei') { $caixa=1; $dias=0; }
-            elseif ($resp==='dificil') { $dias=1; }
-            elseif ($resp==='acertei') { $caixa=min(5,$caixa+1); $dias=$intervalos[$caixa]; }
-            else fail('Resposta inválida.');
+            $novo=leitner((int)$card['caixa'],$resp);
+            if (!$novo) fail('Resposta inválida.');
+            [$caixa,$dias]=$novo;
             $row=one('UPDATE flashcard SET caixa=?,proxima_revisao=current_date+?::int,acertos=acertos+?,erros=erros+?,revisado_em=now() WHERE id=? RETURNING caixa,proxima_revisao AS proxima',[$caixa,$dias,$resp==='errei'?0:1,$resp==='errei'?1:0,(int)$card['id']]);
             db()->commit();
             reply(['card'=>['id'=>(int)$card['id'],'caixa'=>(int)$row['caixa'],'proxima'=>$row['proxima'],'dias'=>$dias]]);
